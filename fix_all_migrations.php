@@ -34,3 +34,4 @@ foreach ($tablesToMark as $table => $migration) {
 echo "\n=== SELESAI ===\n";
 echo "Sekarang jalankan: php artisan migrate\n";
 
+

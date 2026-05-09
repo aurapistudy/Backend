@@ -56,12 +56,12 @@ class GeminiBabSummaryService
             throw new GeminiCoverException('Format rangkuman bab dari Gemini tidak valid.');
         }
 
-        $title = trim((string) ($decoded['judul_ringkasan'] ?? ''));
-        $short = trim((string) ($decoded['ringkasan_singkat'] ?? ''));
-        $memoryTip = trim((string) ($decoded['tips_mengingat'] ?? ''));
-        $example = trim((string) ($decoded['contoh'] ?? ''));
-        $keyPoints = $this->normalizeStringArray($decoded['poin_utama'] ?? [], 5);
-        $keywords = $this->normalizeStringArray($decoded['kata_kunci'] ?? [], 8);
+        $title = $this->limitWords(trim((string) ($decoded['judul_ringkasan'] ?? '')), 4);
+        $short = $this->limitWords(trim((string) ($decoded['ringkasan_singkat'] ?? '')), 18);
+        $memoryTip = $this->limitWords(trim((string) ($decoded['tips_mengingat'] ?? '')), 10);
+        $example = $this->limitWords(trim((string) ($decoded['contoh'] ?? '')), 8);
+        $keyPoints = $this->normalizeStringArray($decoded['poin_utama'] ?? [], 3, 8);
+        $keywords = $this->normalizeStringArray($decoded['kata_kunci'] ?? [], 4, 2);
 
         if ($short === '' || $keyPoints === []) {
             throw new GeminiCoverException('Rangkuman bab dari Gemini belum memenuhi format minimal sistem.');
@@ -83,15 +83,19 @@ class GeminiBabSummaryService
         $level = trim((string) optional($materi->level)->nama);
 
         return implode("\n", array_filter([
-            'Buat rangkuman visual-terstruktur untuk bab materi pembelajaran berikut.',
+            'Buat rangkuman visual-singkat untuk bab materi pembelajaran berikut.',
             'Output harus berupa JSON murni tanpa markdown.',
             'Gunakan bahasa Indonesia yang sederhana, jelas, dan cocok untuk siswa.',
             'Jangan menambahkan fakta di luar materi.',
+            'Prioritaskan isi yang sangat singkat, padat, dan mudah dibaca cepat.',
             'Format JSON wajib:',
             '{"judul_ringkasan":"string","ringkasan_singkat":"string","poin_utama":["string"],"kata_kunci":["string"],"tips_mengingat":"string","contoh":"string"}',
-            'Buat `ringkasan_singkat` 2-3 kalimat.',
-            'Buat `poin_utama` sebanyak 3 sampai 5 poin.',
-            'Buat `kata_kunci` maksimal 8 item.',
+            'Buat `judul_ringkasan` maksimal 4 kata.',
+            'Buat `ringkasan_singkat` hanya 1 kalimat pendek, maksimal 18 kata.',
+            'Buat `poin_utama` tepat 3 poin, tiap poin maksimal 8 kata.',
+            'Buat `kata_kunci` maksimal 4 item, tiap item 1-2 kata.',
+            'Buat `tips_mengingat` hanya 1 kalimat pendek, maksimal 10 kata.',
+            'Buat `contoh` singkat sekali, maksimal 8 kata. Jika tidak perlu, isi string kosong.',
             "Judul buku: {$materi->judul}.",
             "Judul bab: {$bab->judul_bab}.",
             $mataPelajaran !== '' ? "Mata pelajaran: {$mataPelajaran}." : null,
@@ -153,7 +157,7 @@ class GeminiBabSummaryService
         ]];
     }
 
-    private function normalizeStringArray(mixed $values, int $maxItems): array
+    private function normalizeStringArray(mixed $values, int $maxItems, ?int $maxWordsPerItem = null): array
     {
         if (!is_array($values)) {
             return [];
@@ -162,6 +166,9 @@ class GeminiBabSummaryService
         $normalized = [];
         foreach ($values as $value) {
             $item = trim((string) $value);
+            if ($maxWordsPerItem !== null) {
+                $item = $this->limitWords($item, $maxWordsPerItem);
+            }
             if ($item === '') {
                 continue;
             }
@@ -172,6 +179,21 @@ class GeminiBabSummaryService
         }
 
         return $normalized;
+    }
+
+    private function limitWords(string $text, int $maxWords): string
+    {
+        $text = trim(preg_replace('/\s+/', ' ', $text) ?? '');
+        if ($text === '' || $maxWords < 1) {
+            return '';
+        }
+
+        $words = preg_split('/\s+/', $text) ?: [];
+        if (count($words) <= $maxWords) {
+            return $text;
+        }
+
+        return implode(' ', array_slice($words, 0, $maxWords));
     }
 
     private function buildFriendlyErrorMessage(int $status, string $rawMessage, string $model): string

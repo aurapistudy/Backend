@@ -1105,7 +1105,7 @@
                                                 </button>
                                             </div>
 
-                                            <div id="cover_ai_loading" class="cover-ai-loading">Gemini sedang membuat preview cover...</div>
+                                            <div id="cover_ai_loading" class="cover-ai-loading">Model sedang memproses preview cover...</div>
 
                                             <div id="cover_ai_preview" class="cover-ai-preview">
                                                 <div class="cover-ai-preview-card">

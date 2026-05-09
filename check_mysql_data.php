@@ -67,3 +67,4 @@ echo "\n=== SELESAI ===\n";
 echo "Data sekarang tersimpan di MySQL database 'akses'\n";
 echo "Bisa dilihat di phpMyAdmin: http://localhost/phpmyadmin\n";
 
+

@@ -86,3 +86,4 @@ foreach ($migrations as $migration => $table) {
 echo "\n=== SELESAI ===\n";
 echo "Sekarang jalankan: php artisan migrate\n";
 
+

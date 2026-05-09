@@ -41,3 +41,4 @@ echo "1. Database 'akses' sudah dibuat di MySQL\n";
 echo "2. User 'akses' punya akses ke database 'akses'\n";
 echo "3. Jika user 'akses' punya password, tambahkan di .env: DB_PASSWORD=password_anda\n";
 
+

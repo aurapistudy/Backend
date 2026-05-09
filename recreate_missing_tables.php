@@ -69,3 +69,4 @@ if (!Schema::hasTable('guru')) {
 echo "=== SELESAI ===\n";
 echo "Semua tabel sudah dibuat ulang!\n";
 
+

@@ -25,6 +25,7 @@ class MateriBab extends Model
         'summary_keywords',
         'summary_memory_tip',
         'summary_example',
+        'summary_visual_path',
         'summary_generated_at',
     ];
 
@@ -39,6 +40,7 @@ class MateriBab extends Model
 
     protected $appends = [
         'file_url',
+        'summary_visual_url',
     ];
 
     public function materi()
@@ -58,5 +60,14 @@ class MateriBab extends Model
         }
 
         return URL::route('media.public.show', ['path' => $this->file_path], true);
+    }
+
+    public function getSummaryVisualUrlAttribute(): ?string
+    {
+        if (!$this->summary_visual_path) {
+            return null;
+        }
+
+        return URL::route('media.public.show', ['path' => $this->summary_visual_path], true);
     }
 }

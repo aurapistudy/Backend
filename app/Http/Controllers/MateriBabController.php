@@ -6,6 +6,7 @@ use App\Exceptions\GeminiCoverException;
 use App\Models\Materi;
 use App\Models\MateriBab;
 use App\Services\GeminiBabSummaryService;
+use App\Services\HuggingFaceSummaryVisualService;
 use App\Services\PdfCompressionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -84,10 +85,14 @@ class MateriBabController extends Controller
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
         $filePath = $bab->file_path;
+        $summaryVisualPath = $bab->summary_visual_path;
         $bab->delete();
 
         if ($filePath && Storage::disk('public')->exists($filePath)) {
             Storage::disk('public')->delete($filePath);
+        }
+        if ($summaryVisualPath && Storage::disk('public')->exists($summaryVisualPath)) {
+            Storage::disk('public')->delete($summaryVisualPath);
         }
 
         if ($this->isApiRequest($request)) {
@@ -100,13 +105,30 @@ class MateriBabController extends Controller
             ->with('success', 'Materi berhasil dihapus.');
     }
 
-    public function generateSummary(Request $request, Materi $materi, MateriBab $bab, GeminiBabSummaryService $summaryService)
+    public function generateSummary(
+        Request $request,
+        Materi $materi,
+        MateriBab $bab,
+        GeminiBabSummaryService $summaryService,
+        HuggingFaceSummaryVisualService $summaryVisualService
+    )
     {
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
         try {
-            $summary = $summaryService->generateSummary($materi->loadMissing(['mataPelajaran', 'level']), $bab);
+            $materi->loadMissing(['mataPelajaran', 'level']);
+            $summary = $summaryService->generateSummary($materi, $bab);
+            $poster = $summaryVisualService->generateSummaryPoster($materi, $bab, $summary);
+            $posterPath = 'summary/posters/' . now()->format('YmdHis') . '_' . uniqid('', true) . '.' . $poster['extension'];
+
+            Storage::disk('public')->put($posterPath, $poster['binary']);
+
+            if ($bab->summary_visual_path && Storage::disk('public')->exists($bab->summary_visual_path)) {
+                Storage::disk('public')->delete($bab->summary_visual_path);
+            }
+
             $bab->update(array_merge($summary, [
+                'summary_visual_path' => $posterPath,
                 'summary_generated_at' => now(),
             ]));
 

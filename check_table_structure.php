@@ -25,3 +25,4 @@ if ($count > 0) {
     echo "ID pertama: {$first->id} (tipe: " . gettype($first->id) . ")\n";
 }
 
+

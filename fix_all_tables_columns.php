@@ -42,3 +42,4 @@ foreach ($tables as $table) {
 echo "\n=== SELESAI ===\n";
 echo "Sekarang jalankan: php artisan db:seed\n";
 
+

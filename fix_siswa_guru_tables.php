@@ -57,3 +57,4 @@ if (!Schema::hasTable('guru')) {
 echo "=== SELESAI ===\n";
 echo "Tabel siswa dan guru sudah dibuat (tanpa foreign key constraint untuk sementara)\n";
 
+

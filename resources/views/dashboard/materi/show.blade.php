@@ -663,81 +663,193 @@
 
         .summary-shell {
             margin-top: 1rem;
-            border: 1px solid rgba(248, 184, 3, 0.2);
-            border-radius: 18px;
-            background: linear-gradient(180deg, #FFFDF5 0%, #FFFFFF 100%);
-            padding: 1rem 1.05rem;
+            border: 1px solid rgba(17, 24, 39, 0.06);
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at top right, rgba(248, 184, 3, 0.22), transparent 34%),
+                linear-gradient(135deg, #FFF7D6 0%, #FFFFFF 55%, #F8FAFC 100%);
+            padding: 1.1rem;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
         }
 
         .summary-head {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
-            margin-bottom: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.34rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+            color: #8A6500;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .summary-title {
+            margin-top: 0.55rem;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .summary-generated {
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            color: var(--color-muted);
+        }
+
+        .summary-hero {
+            border-radius: 20px;
+            background: #111827;
+            color: #FFFFFF;
+            padding: 1rem 1.05rem;
+            margin-bottom: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-hero::after {
+            content: '';
+            position: absolute;
+            inset: auto -20px -30px auto;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(248, 184, 3, 0.22);
+        }
+
+        .summary-hero-label {
+            position: relative;
+            z-index: 1;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.72);
+            margin-bottom: 0.45rem;
+        }
+
+        .summary-hero-text {
+            position: relative;
+            z-index: 1;
             font-size: 1rem;
+            line-height: 1.6;
             font-weight: 700;
-            color: var(--color-text);
         }
 
         .summary-grid {
             display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 0.9rem;
+        }
+
+        .summary-panel {
+            display: grid;
             gap: 0.9rem;
         }
 
         .summary-card {
-            border-radius: 14px;
+            border-radius: 18px;
             border: 1px solid rgba(17, 24, 39, 0.08);
-            background: #FFFFFF;
-            padding: 0.95rem 1rem;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 1rem;
+            backdrop-filter: blur(10px);
         }
 
         .summary-label {
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            color: var(--color-muted);
-            margin-bottom: 0.45rem;
+            color: #6B7280;
+            margin-bottom: 0.7rem;
         }
 
-        .summary-text {
-            color: var(--color-text);
-            line-height: 1.7;
+        .summary-points {
+            display: grid;
+            gap: 0.72rem;
         }
 
-        .summary-list {
-            margin: 0;
-            padding-left: 1.1rem;
-            color: var(--color-text);
-            line-height: 1.7;
+        .summary-point {
+            display: grid;
+            grid-template-columns: 38px 1fr;
+            gap: 0.7rem;
+            align-items: center;
+            padding: 0.72rem 0.78rem;
+            border-radius: 16px;
+            background: #FFFFFF;
+            border: 1px solid rgba(17, 24, 39, 0.06);
+        }
+
+        .summary-point-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #F8B803 0%, #F59E0B 100%);
+            color: #111827;
+            font-weight: 800;
+            font-size: 0.95rem;
+        }
+
+        .summary-point-text,
+        .summary-tip-text,
+        .summary-example-text {
+            color: #111827;
+            line-height: 1.6;
+            font-weight: 600;
         }
 
         .keyword-wrap {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.55rem;
             flex-wrap: wrap;
         }
 
         .keyword-chip {
             display: inline-flex;
             align-items: center;
-            padding: 0.38rem 0.72rem;
+            justify-content: center;
+            min-height: 40px;
+            padding: 0.45rem 0.8rem;
             border-radius: 999px;
-            background: var(--color-accent-light);
-            color: var(--color-accent-dark);
+            background: linear-gradient(135deg, #FEF3C7 0%, #FFFFFF 100%);
+            color: #8A6500;
+            border: 1px solid rgba(248, 184, 3, 0.3);
             font-size: 0.82rem;
-            font-weight: 700;
+            font-weight: 800;
         }
 
-        .summary-generated {
+        .summary-tip-card {
+            background: linear-gradient(135deg, #DBEAFE 0%, #FFFFFF 100%);
+        }
+
+        .summary-example-badge {
+            margin-top: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.78rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.06);
+            color: #374151;
             font-size: 0.82rem;
-            color: var(--color-muted);
+            font-weight: 700;
         }
 
         @media (max-width: 1080px) {
@@ -933,51 +1045,34 @@
                                                     Letakkan kuis dan rangkuman di akhir materi agar alur belajar tetap runtut dan setiap topik punya penutup yang jelas.
                                                 </div>
 
-                                                @if($bab->summary_short || ($bab->summary_key_points ?? []))
+                                                @if($bab->summary_visual_url || $bab->summary_short || ($bab->summary_key_points ?? []))
                                                     <div class="summary-shell">
                                                         <div class="summary-head">
                                                             <div>
+                                                                <div class="summary-kicker">
+                                                                    <i data-lucide="image"></i>
+                                                                    Poster AI
+                                                                </div>
                                                                 <div class="summary-title">{{ $bab->summary_title ?: 'Rangkuman Materi' }}</div>
                                                                 <div class="summary-generated">
-                                                                    Visual rangkuman AI untuk akhir materi
+                                                                    Rangkuman akhir materi dalam bentuk gambar
                                                                     @if($bab->summary_generated_at)
-                                                                        • diperbarui {{ $bab->summary_generated_at->format('d M Y H:i') }}
+                                                                        | diperbarui {{ $bab->summary_generated_at->format('d M Y H:i') }}
                                                                     @endif
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="summary-grid">
-                                                            <div class="summary-card">
-                                                                <div class="summary-label">Inti Materi</div>
-                                                                <div class="summary-text">{{ $bab->summary_short }}</div>
+                                                        @if($bab->summary_visual_url)
+                                                            <img
+                                                                src="{{ $bab->summary_visual_url }}"
+                                                                alt="Poster rangkuman {{ $bab->judul_bab }}"
+                                                                style="width:100%; display:block; border-radius:20px; border:1px solid rgba(255,255,255,0.25); box-shadow:0 18px 40px rgba(15,23,42,0.18);"
+                                                            >
+                                                        @else
+                                                            <div class="chapter-note" style="margin-top:0;">
+                                                                Poster gambar untuk rangkuman ini belum tersedia. Klik "Perbarui Rangkuman" untuk membuat versi poster AI terbaru.
                                                             </div>
-                                                            <div class="summary-card">
-                                                                <div class="summary-label">Kata Kunci</div>
-                                                                <div class="keyword-wrap">
-                                                                    @forelse(($bab->summary_keywords ?? []) as $keyword)
-                                                                        <span class="keyword-chip">{{ $keyword }}</span>
-                                                                    @empty
-                                                                        <span class="summary-text" style="color:var(--color-muted);">Belum ada kata kunci.</span>
-                                                                    @endforelse
-                                                                </div>
-                                                            </div>
-                                                            <div class="summary-card">
-                                                                <div class="summary-label">Poin Utama</div>
-                                                                <ul class="summary-list">
-                                                                    @foreach(($bab->summary_key_points ?? []) as $point)
-                                                                        <li>{{ $point }}</li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            </div>
-                                                            <div class="summary-card">
-                                                                <div class="summary-label">Ingat Ini</div>
-                                                                <div class="summary-text">{{ $bab->summary_memory_tip ?: 'Belum ada tips mengingat.' }}</div>
-                                                                @if($bab->summary_example)
-                                                                    <div class="summary-label" style="margin-top:0.85rem;">Contoh Sederhana</div>
-                                                                    <div class="summary-text">{{ $bab->summary_example }}</div>
-                                                                @endif
-                                                            </div>
-                                                        </div>
+                                                        @endif
                                                     </div>
                                                 @endif
                                             </div>
