@@ -6,6 +6,7 @@ use App\Exceptions\GeminiCoverException;
 use App\Models\Materi;
 use App\Models\MateriBab;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class HuggingFaceSummaryVisualService
 {
@@ -222,10 +223,100 @@ SVG;
 
     private function rasterizeSvgToPng(string $svg): string
     {
+        $rsvgResult = $this->convertSvgWithRsvg($svg);
+        if ($rsvgResult !== null) {
+            return $rsvgResult;
+        }
+
+        $imagickResult = $this->convertSvgWithImagick($svg);
+        if ($imagickResult !== null) {
+            return $imagickResult;
+        }
+
+        throw new GeminiCoverException(
+            'Konversi poster rangkuman ke PNG gagal. Pastikan rsvg-convert (librsvg2-bin) atau ekstensi Imagick dengan dukungan SVG terpasang di server.'
+        );
+    }
+
+    private function convertSvgWithRsvg(string $svg): ?string
+    {
+        if (!function_exists('proc_open')) {
+            return null;
+        }
+
+        $binary = $this->locateRsvgConvert();
+        if ($binary === null) {
+            return null;
+        }
+
+        $descriptors = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = @proc_open(
+            [$binary, '--format=png', '--dpi-x=144', '--dpi-y=144'],
+            $descriptors,
+            $pipes
+        );
+
+        if (!is_resource($process)) {
+            Log::warning('rsvg-convert gagal di-spawn untuk poster rangkuman.');
+
+            return null;
+        }
+
+        fwrite($pipes[0], $svg);
+        fclose($pipes[0]);
+
+        $output = stream_get_contents($pipes[1]);
+        $error = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        $exitCode = proc_close($process);
+
+        if ($exitCode !== 0 || !is_string($output) || $output === '') {
+            Log::warning('rsvg-convert mengembalikan output kosong / non-zero exit.', [
+                'exit_code' => $exitCode,
+                'stderr' => is_string($error) ? mb_substr($error, 0, 500) : null,
+            ]);
+
+            return null;
+        }
+
+        return $output;
+    }
+
+    private function locateRsvgConvert(): ?string
+    {
+        $candidates = ['rsvg-convert'];
+        $isWindows = stripos(PHP_OS_FAMILY, 'Win') === 0;
+        if ($isWindows) {
+            $candidates = ['rsvg-convert.exe', 'rsvg-convert'];
+        }
+
+        foreach ($candidates as $candidate) {
+            $cmd = $isWindows ? "where {$candidate}" : "command -v {$candidate}";
+            $path = @shell_exec($cmd . ' 2>/dev/null');
+            if (is_string($path)) {
+                $path = trim(strtok($path, "\n") ?: '');
+                if ($path !== '' && @is_executable($path)) {
+                    return $path;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function convertSvgWithImagick(string $svg): ?string
+    {
         if (!class_exists(\Imagick::class) || !class_exists(\ImagickPixel::class)) {
-            throw new GeminiCoverException(
-                'Poster rangkuman belum bisa dikonversi ke PNG karena ekstensi Imagick belum terpasang di server.'
-            );
+            Log::warning('Imagick tidak tersedia untuk konversi poster rangkuman.');
+
+            return null;
         }
 
         try {
@@ -239,17 +330,17 @@ SVG;
             $imagick->clear();
             $imagick->destroy();
 
-            if ($png === '') {
-                throw new GeminiCoverException('Hasil konversi poster rangkuman ke PNG kosong.');
+            if (!is_string($png) || $png === '') {
+                return null;
             }
 
             return $png;
-        } catch (GeminiCoverException $exception) {
-            throw $exception;
         } catch (\Throwable $exception) {
-            throw new GeminiCoverException(
-                'Konversi poster rangkuman ke PNG gagal. Pastikan Imagick aktif dan mendukung rasterisasi SVG.'
-            );
+            Log::warning('Imagick gagal merasterisasi SVG poster rangkuman.', [
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return null;
         }
     }
 
