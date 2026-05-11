@@ -5,11 +5,14 @@ namespace App\Services;
 use App\Exceptions\GeminiCoverException;
 use App\Models\Materi;
 use App\Models\MateriBab;
+use App\Services\Concerns\BuildsBabSummaryFromDecodedJson;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 class GeminiBabSummaryService
 {
+    use BuildsBabSummaryFromDecodedJson;
+
     public function generateSummary(Materi $materi, MateriBab $bab): array
     {
         $apiKey = (string) config('services.gemini.api_key');
@@ -19,7 +22,7 @@ class GeminiBabSummaryService
             throw new GeminiCoverException('GEMINI_API_KEY belum dikonfigurasi.');
         }
 
-        $prompt = $this->buildPrompt($materi, $bab);
+        $prompt = $this->buildPromptInstructions($materi, $bab);
         $contents = [[
             'parts' => $this->buildParts($materi, $bab, $prompt),
         ]];
@@ -32,6 +35,7 @@ class GeminiBabSummaryService
                 'contents' => $contents,
                 'generationConfig' => [
                     'responseMimeType' => 'application/json',
+                    'temperature' => 0.65,
                 ],
             ]);
 
@@ -56,51 +60,14 @@ class GeminiBabSummaryService
             throw new GeminiCoverException('Format rangkuman bab dari Gemini tidak valid.');
         }
 
-        $title = $this->limitWords(trim((string) ($decoded['judul_ringkasan'] ?? '')), 4);
-        $short = $this->limitWords(trim((string) ($decoded['ringkasan_singkat'] ?? '')), 18);
-        $memoryTip = $this->limitWords(trim((string) ($decoded['tips_mengingat'] ?? '')), 10);
-        $example = $this->limitWords(trim((string) ($decoded['contoh'] ?? '')), 8);
-        $keyPoints = $this->normalizeStringArray($decoded['poin_utama'] ?? [], 3, 8);
-        $keywords = $this->normalizeStringArray($decoded['kata_kunci'] ?? [], 4, 2);
-
-        if ($short === '' || $keyPoints === []) {
-            throw new GeminiCoverException('Rangkuman bab dari Gemini belum memenuhi format minimal sistem.');
+        try {
+            return $this->mapDecodedSummaryToPayload($decoded, $bab);
+        } catch (GeminiCoverException $e) {
+            throw new GeminiCoverException(
+                str_replace('Rangkuman bab belum', 'Rangkuman bab dari Gemini belum', $e->getMessage()),
+                $e->status()
+            );
         }
-
-        return [
-            'summary_title' => $title !== '' ? $title : 'Rangkuman ' . $bab->judul_bab,
-            'summary_short' => $short,
-            'summary_key_points' => $keyPoints,
-            'summary_keywords' => $keywords,
-            'summary_memory_tip' => $memoryTip !== '' ? $memoryTip : null,
-            'summary_example' => $example !== '' ? $example : null,
-        ];
-    }
-
-    private function buildPrompt(Materi $materi, MateriBab $bab): string
-    {
-        $mataPelajaran = trim((string) optional($materi->mataPelajaran)->nama);
-        $level = trim((string) optional($materi->level)->nama);
-
-        return implode("\n", array_filter([
-            'Buat rangkuman visual-singkat untuk bab materi pembelajaran berikut.',
-            'Output harus berupa JSON murni tanpa markdown.',
-            'Gunakan bahasa Indonesia yang sederhana, jelas, dan cocok untuk siswa.',
-            'Jangan menambahkan fakta di luar materi.',
-            'Prioritaskan isi yang sangat singkat, padat, dan mudah dibaca cepat.',
-            'Format JSON wajib:',
-            '{"judul_ringkasan":"string","ringkasan_singkat":"string","poin_utama":["string"],"kata_kunci":["string"],"tips_mengingat":"string","contoh":"string"}',
-            'Buat `judul_ringkasan` maksimal 4 kata.',
-            'Buat `ringkasan_singkat` hanya 1 kalimat pendek, maksimal 18 kata.',
-            'Buat `poin_utama` tepat 3 poin, tiap poin maksimal 8 kata.',
-            'Buat `kata_kunci` maksimal 4 item, tiap item 1-2 kata.',
-            'Buat `tips_mengingat` hanya 1 kalimat pendek, maksimal 10 kata.',
-            'Buat `contoh` singkat sekali, maksimal 8 kata. Jika tidak perlu, isi string kosong.',
-            "Judul buku: {$materi->judul}.",
-            "Judul bab: {$bab->judul_bab}.",
-            $mataPelajaran !== '' ? "Mata pelajaran: {$mataPelajaran}." : null,
-            $level !== '' ? "Level siswa: {$level}." : null,
-        ]));
     }
 
     private function buildParts(Materi $materi, MateriBab $bab, string $prompt): array
@@ -157,45 +124,6 @@ class GeminiBabSummaryService
         ]];
     }
 
-    private function normalizeStringArray(mixed $values, int $maxItems, ?int $maxWordsPerItem = null): array
-    {
-        if (!is_array($values)) {
-            return [];
-        }
-
-        $normalized = [];
-        foreach ($values as $value) {
-            $item = trim((string) $value);
-            if ($maxWordsPerItem !== null) {
-                $item = $this->limitWords($item, $maxWordsPerItem);
-            }
-            if ($item === '') {
-                continue;
-            }
-            $normalized[] = $item;
-            if (count($normalized) >= $maxItems) {
-                break;
-            }
-        }
-
-        return $normalized;
-    }
-
-    private function limitWords(string $text, int $maxWords): string
-    {
-        $text = trim(preg_replace('/\s+/', ' ', $text) ?? '');
-        if ($text === '' || $maxWords < 1) {
-            return '';
-        }
-
-        $words = preg_split('/\s+/', $text) ?: [];
-        if (count($words) <= $maxWords) {
-            return $text;
-        }
-
-        return implode(' ', array_slice($words, 0, $maxWords));
-    }
-
     private function buildFriendlyErrorMessage(int $status, string $rawMessage, string $model): string
     {
         $normalized = strtolower($rawMessage);
@@ -208,7 +136,8 @@ class GeminiBabSummaryService
         ) {
             return "Kuota Gemini untuk generate rangkuman bab sedang habis atau belum aktif pada project ini. "
                 . "Cek billing dan rate limit di Google AI Studio, atau coba lagi nanti. "
-                . "Model yang sedang dipakai: {$model}.";
+                . "Model yang sedang dipakai: {$model}. "
+                . 'Alternatif: jika bab berisi teks (bukan hanya file PDF), set SUMMARY_TEXT_PROVIDER=huggingface di .env dan pastikan HF_API_TOKEN aktif.';
         }
 
         if ($status === 403 || str_contains($normalized, 'permission')) {

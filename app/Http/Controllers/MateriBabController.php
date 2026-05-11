@@ -6,6 +6,7 @@ use App\Exceptions\GeminiCoverException;
 use App\Models\Materi;
 use App\Models\MateriBab;
 use App\Services\GeminiBabSummaryService;
+use App\Services\HuggingFaceBabSummaryService;
 use App\Services\HuggingFaceSummaryVisualService;
 use App\Services\PdfCompressionService;
 use Illuminate\Http\Request;
@@ -109,7 +110,8 @@ class MateriBabController extends Controller
         Request $request,
         Materi $materi,
         MateriBab $bab,
-        GeminiBabSummaryService $summaryService,
+        GeminiBabSummaryService $geminiBabSummaryService,
+        HuggingFaceBabSummaryService $huggingFaceBabSummaryService,
         HuggingFaceSummaryVisualService $summaryVisualService
     )
     {
@@ -117,6 +119,10 @@ class MateriBabController extends Controller
 
         try {
             $materi->loadMissing(['mataPelajaran', 'level']);
+            $provider = (string) config('services.bab_summary.text_provider', 'gemini');
+            $summaryService = strtolower($provider) === 'huggingface'
+                ? $huggingFaceBabSummaryService
+                : $geminiBabSummaryService;
             $summary = $summaryService->generateSummary($materi, $bab);
             $poster = $summaryVisualService->generateSummaryPoster($materi, $bab, $summary);
             $posterPath = 'summary/posters/' . now()->format('YmdHis') . '_' . uniqid('', true) . '.' . $poster['extension'];

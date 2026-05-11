@@ -24,12 +24,26 @@ class HuggingFaceSummaryVisualService
     private function generateBackgroundImage(Materi $materi, MateriBab $bab, array $summary): array
     {
         $apiToken = (string) config('services.huggingface.api_token');
-        $model = (string) config('services.huggingface.image_model', 'black-forest-labs/FLUX.1-schnell');
+        $fallbackModel = (string) config('services.huggingface.image_model', 'black-forest-labs/FLUX.1-schnell');
+        $model = trim((string) (config('services.huggingface.summary_poster_model') ?: $fallbackModel));
         $baseUrl = rtrim((string) config('services.huggingface.base_url', 'https://router.huggingface.co/hf-inference/models'), '/');
 
         if ($apiToken === '') {
             throw new GeminiCoverException('HF_API_TOKEN belum dikonfigurasi.');
         }
+
+        $stepsRaw = config('services.huggingface.summary_poster_inference_steps');
+        $modelLower = strtolower($model);
+        if ($stepsRaw === null || $stepsRaw === '') {
+            $numInferenceSteps = str_contains($modelLower, 'schnell') ? 4 : 22;
+        } else {
+            $numInferenceSteps = max(1, (int) $stepsRaw);
+        }
+
+        $guidanceRaw = config('services.huggingface.summary_poster_guidance_scale');
+        $guidanceScale = ($guidanceRaw === null || $guidanceRaw === '')
+            ? 3.5
+            : (float) $guidanceRaw;
 
         $response = Http::timeout(180)
             ->withToken($apiToken)
@@ -37,8 +51,8 @@ class HuggingFaceSummaryVisualService
             ->post("{$baseUrl}/{$model}", [
                 'inputs' => $this->buildBackgroundPrompt($materi, $bab, $summary),
                 'parameters' => [
-                    'num_inference_steps' => 4,
-                    'guidance_scale' => 3.5,
+                    'num_inference_steps' => $numInferenceSteps,
+                    'guidance_scale' => $guidanceScale,
                 ],
             ]);
 
@@ -69,25 +83,27 @@ class HuggingFaceSummaryVisualService
 
     private function buildBackgroundPrompt(Materi $materi, MateriBab $bab, array $summary): string
     {
-        $keywords = implode(', ', array_slice($summary['summary_keywords'] ?? [], 0, 4));
+        // Jangan kirim judul/ringkasan teks ke model gambar — sering memicu kata ditulis di dalam gambar.
+        $keywords = implode(', ', array_slice($summary['summary_keywords'] ?? [], 0, 6));
         $topicHints = implode(', ', array_filter([
-            trim((string) ($summary['summary_title'] ?? '')),
-            trim((string) ($summary['summary_short'] ?? '')),
             trim((string) $bab->judul_bab),
-            $keywords,
+            $keywords !== '' ? $keywords : null,
         ]));
 
         return implode("\n", array_filter([
-            'Create a clean educational illustration for a student summary poster.',
-            'The image must show only objects directly related to the lesson topic.',
-            'Style: polished, modern, friendly, simple composition, soft lighting, classroom-appropriate.',
-            'Do not include any letters, words, numbers, watermark, logo, paragraph, label, banner, signboard, or typography.',
-            'Absolutely avoid unrelated objects, world maps, flags, fish, travel themes, random icons, and generic stock-poster elements unless the topic explicitly requires them.',
-            'Leave calm composition with one main scene that matches the topic exactly.',
-            "Book title context: {$materi->judul}.",
-            "Chapter title context: {$bab->judul_bab}.",
-            $topicHints !== '' ? "Illustrate these concepts only: {$topicHints}." : null,
-            $keywords !== '' ? "Theme keywords: {$keywords}." : null,
+            'Pure illustration only: draw objects and scenes, zero readable characters.',
+            'Create a clean educational illustration background for a summary poster.',
+            'The scene must reflect the lesson topic using visuals only (people, objects, nature, symbols without letters).',
+            'Style: polished, modern, friendly, simple composition, soft lighting, classroom-appropriate, sharp focus, cohesive palette, not cluttered.',
+            'ABSOLUTELY NO text of any kind: no letters, words, numbers, captions, headlines, titles on image, subtitles, logos, watermarks, signs with writing, book covers with title, magazine layout, infographic labels, speech bubbles with text, keyboard keys with letters, UI mockups with text.',
+            'Do not spell topic names or keywords as typography inside the image — express the idea only through drawings.',
+            'Never show world maps, globes, or national flags unless the lesson is explicitly about geography, geopolitics, or state symbols.',
+            'For science, energy, or technology lessons, show concrete objects and scenes; no maps or flags unless required.',
+            'Absolutely avoid unrelated clutter: fish, vacation posters, random icons, unless the topic truly needs them.',
+            'Leave calm composition with one main scene matching the topic.',
+            "Course context (do not paint this as text): {$materi->judul}.",
+            "Chapter theme (visual meaning only): {$bab->judul_bab}.",
+            $topicHints !== '' ? "Visual concepts to depict without words: {$topicHints}." : null,
         ]));
     }
 
@@ -100,18 +116,69 @@ class HuggingFaceSummaryVisualService
         $chapter = $this->escapeXml($bab->judul_bab);
         $subject = $this->escapeXml((string) optional($materi->mataPelajaran)->nama);
 
-        $pointBlocks = $this->buildPointBlocks($summary['summary_key_points'] ?? []);
-        $keywordBlocks = $this->buildKeywordBlocks($summary['summary_keywords'] ?? []);
-
         $fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
         $subjectLine = $subject !== '' ? "<text x=\"116\" y=\"132\" font-size=\"24\" fill=\"#64748B\" font-family=\"{$fontFamily}\" font-weight=\"700\">{$subject}</text>" : '';
-        $exampleBlock = $example !== ''
-            ? "<rect x=\"86\" y=\"1116\" width=\"908\" height=\"92\" rx=\"24\" fill=\"#FFF7ED\" stroke=\"#FDBA74\" />"
-                . "<text x=\"118\" y=\"1172\" font-size=\"28\" font-weight=\"800\" fill=\"#9A3412\" font-family=\"{$fontFamily}\">Contoh: {$this->escapeXml($example)}</text>"
-            : '';
+
+        $heroTop = 266;
+        $heroH = 252;
+        $bandTop = $heroTop + $heroH + 8;
+
+        $shortFit = $this->fitTextLines($short, 820, 30, 16, 700);
+        $shortLh = $this->lineHeightPx($shortFit['fontSize']);
+        $shortTextH = max(1, count($shortFit['lines'])) * $shortLh;
+        $bandLabelY = $bandTop + 26;
+        $shortBaseline = $bandTop + 54;
+        $bandH = (int) max(96, ($shortBaseline - $bandTop) + $shortTextH + 26);
+
+        $panelTop = (int) round($bandTop + $bandH + 10);
+        $leftPanelX = 86;
+        $leftPanelW = 548;
+        $rightPanelX = 666;
+
+        $points = array_slice($summary['summary_key_points'] ?? [], 0, 3);
+        $pointsLayout = $this->layoutPointBlocks($points, $fontFamily, $panelTop);
+
+        $kwLayout = $this->layoutKeywordBlocks($summary['summary_keywords'] ?? [], $panelTop, $fontFamily);
+
+        $memoryBody = $memoryTip !== '' ? $memoryTip : 'Belum ada tips mengingat.';
+        $memoryFit = $this->fitTextLines($memoryBody, 248, 26, 14, 700);
+        $memoryLh = $this->lineHeightPx($memoryFit['fontSize']);
+        $memoryTextH = max(1, count($memoryFit['lines'])) * $memoryLh;
+        $kwEnd = $panelTop + $kwLayout['blockHeight'];
+        $pointsBottom = $pointsLayout['contentBottomY'];
+        // Kotak tips langsung di bawah kata kunci (hindari "jembatan" kosong saat poin kiri tinggi).
+        $memoryTop = (int) round($kwEnd + 8);
+        $memoryTitleY = $memoryTop + 32;
+        $memoryTextY = $memoryTop + 58;
+        $memoryBoxH = (int) max(100, ($memoryTextY - $memoryTop) + $memoryTextH + 22);
+        $memoryBottom = $memoryTop + $memoryBoxH;
+        $sectionBottom = max($memoryBottom, $pointsBottom + 12);
+        $leftPanelH = (int) max(
+            $pointsLayout['leftPanelHeight'],
+            $sectionBottom - $panelTop + 16
+        );
+
+        $shortSvg = $this->emitTextLines($shortFit['lines'], $shortFit['fontSize'], 118, $shortBaseline, '#FFFFFF', 700, $fontFamily);
+        $memorySvg = $this->emitTextLines($memoryFit['lines'], $memoryFit['fontSize'], 704, $memoryTextY, '#1F2937', 700, $fontFamily);
+
+        $exampleBlock = '';
+        $svgHeight = (int) round($sectionBottom + 28);
+        if ($example !== '') {
+            $exFit = $this->fitTextLines('Contoh: ' . $example, 820, 24, 14, 700);
+            $exLh = $this->lineHeightPx($exFit['fontSize']);
+            $exTextH = max(1, count($exFit['lines'])) * $exLh;
+            $exampleTop = (int) round($sectionBottom + 12);
+            $exampleH = (int) round(24 + $exTextH + 28);
+            $exampleBlock = "<rect x=\"86\" y=\"{$exampleTop}\" width=\"908\" height=\"{$exampleH}\" rx=\"24\" fill=\"#FFF7ED\" stroke=\"#FDBA74\" />"
+                . $this->emitTextLines($exFit['lines'], $exFit['fontSize'], 118, (int) round($exampleTop + 26), '#7C2D12', 700, $fontFamily);
+            $svgHeight = (int) round($exampleTop + $exampleH + 36);
+        }
+
+        $svgHeight = max(1350, $svgHeight);
+        $cardH = $svgHeight - 104;
 
         return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-label="Poster rangkuman AI {$title}">
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="{$svgHeight}" viewBox="0 0 1080 {$svgHeight}" role="img" aria-label="Poster rangkuman bab: {$title}">
   <defs>
     <linearGradient id="pageBg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#FFFDF7" />
@@ -126,69 +193,191 @@ class HuggingFaceSummaryVisualService
       <stop offset="100%" stop-color="#1E293B" />
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="1080" height="1350" fill="url(#pageBg)" />
-  <rect x="54" y="52" width="972" height="1246" rx="40" fill="#FFFFFF" stroke="#E5E7EB" />
-  <text x="116" y="96" font-size="24" font-weight="800" letter-spacing="2.6" fill="#D97706" font-family="{$fontFamily}">POSTER RANGKUMAN AI</text>
+  <rect x="0" y="0" width="1080" height="{$svgHeight}" fill="url(#pageBg)" />
+  <rect x="54" y="52" width="972" height="{$cardH}" rx="40" fill="#FFFFFF" stroke="#E5E7EB" />
+  <text x="116" y="96" font-size="22" font-weight="800" letter-spacing="1.8" fill="#D97706" font-family="{$fontFamily}">RANGKUMAN VISUAL BAB</text>
   {$subjectLine}
-  {$this->buildFittedText($title, 116, 182, 58, 42, '#0F172A', 850, 2, 800)}
+  {$this->buildFittedText($title, 116, 182, 56, 30, '#0F172A', 850, 6, 800)}
   <text x="116" y="230" font-size="22" fill="#64748B" font-family="{$fontFamily}" font-weight="700">Bab: {$chapter}</text>
-  <rect x="86" y="266" width="908" height="252" rx="34" fill="#E2E8F0" />
-  <image href="data:{$background['mime_type']};base64,{$background['base64']}" x="86" y="266" width="908" height="252" preserveAspectRatio="xMidYMid slice" />
-  <rect x="86" y="266" width="908" height="252" rx="34" fill="url(#heroShade)" />
-  <rect x="86" y="446" width="908" height="96" rx="28" fill="url(#summaryBand)" />
-  <text x="118" y="486" font-size="22" font-weight="800" fill="#FCD34D" font-family="{$fontFamily}">Gambaran Cepat</text>
-  {$this->buildFittedText($short, 118, 520, 32, 24, '#FFFFFF', 820, 2, 700)}
-  <rect x="86" y="574" width="548" height="506" rx="32" fill="#FFF7E8" stroke="#FCD34D" />
-  <text x="124" y="626" font-size="28" font-weight="800" fill="#334155" font-family="{$fontFamily}">3 Poin Utama</text>
-  {$pointBlocks}
-  <rect x="666" y="574" width="328" height="238" rx="32" fill="#FFFFFF" stroke="#E2E8F0" />
-  <text x="704" y="626" font-size="28" font-weight="800" fill="#334155" font-family="{$fontFamily}">Kata Kunci</text>
-  {$keywordBlocks}
-  <rect x="666" y="842" width="328" height="238" rx="32" fill="#E0F2FE" stroke="#7DD3FC" />
-  <text x="704" y="894" font-size="28" font-weight="800" fill="#0F3A67" font-family="{$fontFamily}">Ingat Ini</text>
-  {$this->buildFittedText($memoryTip !== '' ? $memoryTip : 'Belum ada tips mengingat.', 704, 938, 28, 22, '#1F2937', 248, 3, 700)}
+  <rect x="86" y="{$heroTop}" width="908" height="{$heroH}" rx="34" fill="#E2E8F0" />
+  <image href="data:{$background['mime_type']};base64,{$background['base64']}" x="86" y="{$heroTop}" width="908" height="{$heroH}" preserveAspectRatio="xMidYMid slice" />
+  <rect x="86" y="{$heroTop}" width="908" height="{$heroH}" rx="34" fill="url(#heroShade)" />
+  <rect x="86" y="{$bandTop}" width="908" height="{$bandH}" rx="28" fill="url(#summaryBand)" />
+  <text x="118" y="{$bandLabelY}" font-size="22" font-weight="800" fill="#FCD34D" font-family="{$fontFamily}">Gambaran Cepat</text>
+  {$shortSvg}
+  <rect x="{$leftPanelX}" y="{$panelTop}" width="{$leftPanelW}" height="{$leftPanelH}" rx="32" fill="#FFF7E8" stroke="#FCD34D" />
+  <text x="124" y="{$panelTop}" dy="52" font-size="28" font-weight="800" fill="#334155" font-family="{$fontFamily}">3 Poin Utama</text>
+  {$pointsLayout['svg']}
+  <rect x="{$rightPanelX}" y="{$panelTop}" width="328" height="{$kwLayout['blockHeight']}" rx="32" fill="#FFFFFF" stroke="#E2E8F0" />
+  <text x="704" y="{$panelTop}" dy="52" font-size="28" font-weight="800" fill="#334155" font-family="{$fontFamily}">Kata Kunci</text>
+  {$kwLayout['svg']}
+  <rect x="{$rightPanelX}" y="{$memoryTop}" width="328" height="{$memoryBoxH}" rx="32" fill="#E0F2FE" stroke="#7DD3FC" />
+  <text x="704" y="{$memoryTitleY}" font-size="22" font-weight="800" fill="#0F3A67" font-family="{$fontFamily}">Tips mengingat</text>
+  {$memorySvg}
   {$exampleBlock}
 </svg>
 SVG;
     }
 
-    private function buildPointBlocks(array $points): string
+    /**
+     * @return array{svg: string, leftPanelHeight: int, contentBottomY: int}
+     */
+    private function layoutPointBlocks(array $points, string $fontFamily, int $panelTop): array
     {
-        $blocks = '';
-        $fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-        $y = 666;
+        $svg = '';
+        $y = $panelTop + 72;
         $index = 1;
+        $gap = 8;
+        $contentBottomY = $panelTop + 80;
 
-        foreach (array_slice($points, 0, 3) as $point) {
-            $blocks .= "<rect x=\"124\" y=\"{$y}\" width=\"472\" height=\"108\" rx=\"24\" fill=\"#FFFFFF\" stroke=\"#E5E7EB\" />";
-            $blocks .= "<rect x=\"150\" y=\"" . ($y + 22) . "\" width=\"60\" height=\"60\" rx=\"20\" fill=\"#F8B803\" />";
-            $blocks .= "<text x=\"180\" y=\"" . ($y + 60) . "\" text-anchor=\"middle\" font-size=\"26\" font-weight=\"800\" fill=\"#111827\" font-family=\"{$fontFamily}\">{$index}</text>";
-            $blocks .= $this->buildFittedText((string) $point, 236, $y + 46, 27, 22, '#111827', 320, 2, 700);
-            $y += 126;
+        foreach ($points as $point) {
+            $fit = $this->fitTextLines((string) $point, 328, 25, 14, 600);
+            $lh = $this->lineHeightPx($fit['fontSize']);
+            $textH = max(1, count($fit['lines'])) * $lh;
+            $cardH = (int) max(76, 18 + $textH + 20);
+            $badgeCy = $y + (int) round($cardH / 2);
+
+            $svg .= "<rect x=\"124\" y=\"{$y}\" width=\"472\" height=\"{$cardH}\" rx=\"24\" fill=\"#FFFFFF\" stroke=\"#E5E7EB\" />";
+            $svg .= '<rect x="134" y="' . ($badgeCy - 26) . '" width="52" height="52" rx="16" fill="#F8B803" />';
+            $svg .= "<text x=\"160\" y=\"" . ($badgeCy + 8) . "\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"800\" fill=\"#111827\" font-family=\"{$fontFamily}\">{$index}</text>";
+            $textStartY = $y + (int) round(20 + ($cardH - 20 - $textH) / 2);
+            $svg .= $this->emitTextLines($fit['lines'], $fit['fontSize'], 248, $textStartY, '#1E293B', 600, $fontFamily);
+
+            $contentBottomY = $y + $cardH;
+            $y += $cardH + $gap;
             $index++;
         }
 
-        return $blocks;
-    }
-
-    private function buildKeywordBlocks(array $keywords): string
-    {
-        $blocks = '';
-        $fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-        $x = 694;
-        $y = 668;
-        $perRow = 2;
-
-        foreach (array_slice(array_values($keywords), 0, 4) as $index => $keyword) {
-            $safe = $this->escapeXml((string) $keyword);
-            $currentX = $x + (($index % $perRow) * 142);
-            $currentY = $y + (int) floor($index / $perRow) * 78;
-
-            $blocks .= "<rect x=\"{$currentX}\" y=\"{$currentY}\" width=\"126\" height=\"48\" rx=\"24\" fill=\"#FEF3C7\" stroke=\"#FCD34D\" />";
-            $blocks .= "<text x=\"" . ($currentX + 63) . "\" y=\"" . ($currentY + 31) . "\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"800\" fill=\"#92400E\" font-family=\"{$fontFamily}\">{$safe}</text>";
+        if ($svg === '') {
+            $placeholder = $this->escapeXml('Belum ada poin utama.');
+            $svg = "<text x=\"148\" y=\"" . ($panelTop + 120) . "\" font-size=\"22\" fill=\"#64748B\" font-family=\"{$fontFamily}\">{$placeholder}</text>";
+            $contentBottomY = $panelTop + 150;
         }
 
-        return $blocks;
+        $leftPanelHeight = (int) round($contentBottomY - $panelTop + 16);
+
+        return [
+            'svg' => $svg,
+            'leftPanelHeight' => max(160, $leftPanelHeight),
+            'contentBottomY' => $contentBottomY,
+        ];
+    }
+
+    /**
+     * @return array{svg: string, blockHeight: int}
+     */
+    private function layoutKeywordBlocks(array $keywords, int $panelTop, string $fontFamily): array
+    {
+        $x = 694;
+        $pillBaseY = $panelTop + 66;
+        $kw = array_values(array_slice($keywords, 0, 4));
+        $fits = [];
+        $pillHs = [];
+
+        foreach ($kw as $keyword) {
+            $t = trim((string) $keyword);
+            if ($t === '') {
+                $fits[] = null;
+                $pillHs[] = 0;
+
+                continue;
+            }
+            $fit = $this->fitTextLines($t, 122, 15, 11, 700);
+            $lh = $this->lineHeightPx($fit['fontSize']);
+            $textH = max(1, count($fit['lines'])) * $lh;
+            $pillHs[] = (int) max(36, 8 + $textH + 8);
+            $fits[] = $fit;
+        }
+
+        while (count($pillHs) < 4) {
+            $pillHs[] = 0;
+            $fits[] = null;
+        }
+
+        $svg = '';
+        $y = $pillBaseY;
+
+        for ($row = 0; $row < 2; $row++) {
+            $i0 = $row * 2;
+            $i1 = $row * 2 + 1;
+            $rowH = (int) max(40, $pillHs[$i0], $pillHs[$i1]);
+
+            foreach ([0, 1] as $col) {
+                $idx = $row * 2 + $col;
+                if ($pillHs[$idx] === 0 || $fits[$idx] === null) {
+                    continue;
+                }
+                $fit = $fits[$idx];
+                $pillH = $pillHs[$idx];
+                $currentX = $x + ($col * 148);
+                $pillY = $y + (int) round(($rowH - $pillH) / 2);
+
+                $svg .= "<rect x=\"{$currentX}\" y=\"{$pillY}\" width=\"138\" height=\"{$pillH}\" rx=\"22\" fill=\"#FEF3C7\" stroke=\"#FCD34D\" />";
+                $lh = $this->lineHeightPx($fit['fontSize']);
+                $textH = max(1, count($fit['lines'])) * $lh;
+                $ty = $pillY + (int) round(($pillH - $textH) / 2 + $fit['fontSize'] * 0.82);
+                $svg .= $this->emitTextLines($fit['lines'], $fit['fontSize'], $currentX + 69, $ty, '#92400E', 700, $fontFamily, true);
+            }
+
+            $y += $rowH + 6;
+        }
+
+        $blockHeight = (int) max(120, $y - $panelTop + 6);
+
+        return [
+            'svg' => $svg,
+            'blockHeight' => $blockHeight,
+        ];
+    }
+
+    /**
+     * @return array{fontSize: int, lines: list<string>}
+     */
+    private function fitTextLines(string $text, int $maxWidth, int $maxFont, int $minFont, int $fontWeight): array
+    {
+        $fontSize = $maxFont;
+        while ($fontSize >= $minFont) {
+            $lines = $this->wrapText($text, $maxWidth, $fontSize, 0);
+            if (!$this->hasOverflownLine($lines, $maxWidth, $fontSize)) {
+                return ['fontSize' => $fontSize, 'lines' => $lines];
+            }
+            $fontSize -= 2;
+        }
+
+        $lines = $this->wrapText($text, $maxWidth, $minFont, 0);
+
+        return ['fontSize' => $minFont, 'lines' => $lines];
+    }
+
+    private function lineHeightPx(int $fontSize): int
+    {
+        return (int) max(13, round($fontSize * 1.4));
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function emitTextLines(
+        array $lines,
+        int $fontSize,
+        int $x,
+        int $yStart,
+        string $color,
+        int $fontWeight,
+        string $fontFamily,
+        bool $anchorMiddle = false
+    ): string {
+        $lh = $this->lineHeightPx($fontSize);
+        $result = '';
+        foreach ($lines as $i => $line) {
+            $lineY = $yStart + ($i * $lh);
+            $safe = $this->escapeXml($line);
+            $anchor = $anchorMiddle ? ' text-anchor="middle"' : '';
+
+            $result .= "<text x=\"{$x}\" y=\"{$lineY}\" font-size=\"{$fontSize}\" font-weight=\"{$fontWeight}\" fill=\"{$color}\" font-family=\"{$fontFamily}\"{$anchor}>{$safe}</text>";
+        }
+
+        return $result;
     }
 
     private function buildFittedText(
@@ -206,9 +395,13 @@ SVG;
         $fontSize = $maxFontSize;
         $lines = [];
 
+        $wrapLimit = $maxLines <= 0 ? 0 : $maxLines;
+
         while ($fontSize >= $minFontSize) {
-            $lines = $this->wrapText($text, $maxWidth, $fontSize, $maxLines);
-            if (count($lines) <= $maxLines && !$this->hasOverflownLine($lines, $maxWidth, $fontSize)) {
+            $lines = $this->wrapText($text, $maxWidth, $fontSize, $wrapLimit);
+            $fitsWidth = !$this->hasOverflownLine($lines, $maxWidth, $fontSize);
+            $fitsLines = $maxLines <= 0 || count($lines) <= $maxLines;
+            if ($fitsWidth && $fitsLines) {
                 break;
             }
             $fontSize -= 2;
@@ -216,10 +409,10 @@ SVG;
 
         if ($fontSize < $minFontSize) {
             $fontSize = $minFontSize;
-            $lines = $this->wrapText($text, $maxWidth, $fontSize, $maxLines);
+            $lines = $this->wrapText($text, $maxWidth, $fontSize, $wrapLimit);
         }
 
-        $lineHeight = (int) round($fontSize * 1.35);
+        $lineHeight = (int) max(14, round($fontSize * 1.48));
         $result = '';
 
         foreach ($lines as $lineIndex => $line) {
@@ -240,31 +433,61 @@ SVG;
 
         $maxChars = max(10, (int) floor($maxWidth / max(10, $fontSize * 0.52)));
         $words = preg_split('/\s+/', $clean) ?: [];
-        $lines = [];
+        $allLines = [];
         $current = '';
 
         foreach ($words as $word) {
-            $candidate = $current === '' ? $word : $current . ' ' . $word;
-            if (mb_strlen($candidate) <= $maxChars) {
-                $current = $candidate;
-                continue;
-            }
-
-            if ($current !== '') {
-                $lines[] = $current;
-            }
-            $current = $word;
-
-            if (count($lines) >= $maxLines) {
-                return $lines;
+            foreach ($this->splitWordToFitWidth($word, $maxChars) as $chunk) {
+                $candidate = $current === '' ? $chunk : $current . ' ' . $chunk;
+                if (mb_strlen($candidate) <= $maxChars) {
+                    $current = $candidate;
+                    continue;
+                }
+                if ($current !== '') {
+                    $allLines[] = $current;
+                }
+                $current = $chunk;
             }
         }
 
-        if ($current !== '' && count($lines) < $maxLines) {
-            $lines[] = $current;
+        if ($current !== '') {
+            $allLines[] = $current;
         }
 
-        return $lines;
+        if ($allLines === []) {
+            return [''];
+        }
+
+        if ($maxLines <= 0 || count($allLines) <= $maxLines) {
+            return $allLines;
+        }
+
+        $out = array_slice($allLines, 0, $maxLines);
+        $budget = max(4, $maxChars - 3);
+        $out[$maxLines - 1] = rtrim(mb_substr($out[$maxLines - 1], 0, $budget)) . '...';
+
+        return $out;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function splitWordToFitWidth(string $word, int $maxChars): array
+    {
+        if ($maxChars < 4) {
+            return [$word];
+        }
+        if (mb_strlen($word) <= $maxChars) {
+            return [$word];
+        }
+
+        $chunks = [];
+        $len = mb_strlen($word);
+        for ($i = 0; $i < $len; $i += $maxChars) {
+            $chunks[] = mb_substr($word, $i, $maxChars);
+        }
+
+        return $chunks;
     }
 
     private function hasOverflownLine(array $lines, int $maxWidth, int $fontSize): bool
@@ -305,7 +528,7 @@ SVG;
         }
 
         if ($status === 404 || str_contains($normalized, 'not found')) {
-            return "Model Hugging Face {$model} tidak ditemukan. Cek nilai HF_IMAGE_MODEL di file .env.";
+            return "Model Hugging Face {$model} tidak ditemukan. Cek HF_SUMMARY_POSTER_MODEL atau HF_IMAGE_MODEL di file .env.";
         }
 
         if ($status >= 500) {

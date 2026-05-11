@@ -406,10 +406,13 @@
 
         .chapter-library {
             display: grid;
-            grid-template-columns: 300px minmax(0, 1fr);
-            gap: 1.5rem;
+            grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+            gap: clamp(0.85rem, 1.8vw, 1.35rem);
             align-items: start;
             margin-top: 1rem;
+            width: 100%;
+            max-width: min(1180px, 100%);
+            margin-inline: auto;
         }
 
         .chapter-side {
@@ -473,7 +476,7 @@
             line-height: 1.58;
             font-size: 0.9rem;
             display: -webkit-box;
-            -webkit-line-clamp: 4;
+            -webkit-line-clamp: 8;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -672,6 +675,22 @@
             box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
         }
 
+        .summary-poster-frame {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .summary-poster-img {
+            width: 100%;
+            max-width: min(560px, 100%);
+            height: auto;
+            display: block;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+        }
+
         .summary-head {
             display: flex;
             align-items: flex-start;
@@ -855,10 +874,16 @@
         @media (max-width: 1080px) {
             .chapter-library {
                 grid-template-columns: 1fr;
+                max-width: none;
+                margin-inline: 0;
             }
 
             .chapter-side {
                 position: static;
+            }
+
+            .summary-poster-img {
+                max-width: 100%;
             }
         }
 
@@ -932,7 +957,7 @@
                                 </div>
                                 <div class="chapter-side-title">{{ $materi->judul }}</div>
                                 <div class="chapter-side-copy">
-                                    {{ \Illuminate\Support\Str::limit($materi->deskripsi ?: 'Kelola materi agar mata pelajaran utama tetap rapi dan kuis per bagian tetap mudah diatur.', 150) }}
+                                    {{ \Illuminate\Support\Str::limit($materi->deskripsi ?: 'Kelola materi agar mata pelajaran utama tetap rapi dan kuis per bagian tetap mudah diatur.', 420) }}
                                 </div>
                                 <div class="chapter-side-stats">
                                     <div class="chapter-stat">
@@ -1051,7 +1076,7 @@
                                                             <div>
                                                                 <div class="summary-kicker">
                                                                     <i data-lucide="image"></i>
-                                                                    Poster AI
+                                                                    Poster rangkuman
                                                                 </div>
                                                                 <div class="summary-title">{{ $bab->summary_title ?: 'Rangkuman Materi' }}</div>
                                                                 <div class="summary-generated">
@@ -1063,14 +1088,16 @@
                                                             </div>
                                                         </div>
                                                         @if($bab->summary_visual_url)
+                                                            <div class="summary-poster-frame">
                                                             <img
+                                                                class="summary-poster-img"
                                                                 src="{{ $bab->summary_visual_url }}"
                                                                 alt="Poster rangkuman {{ $bab->judul_bab }}"
-                                                                style="width:100%; display:block; border-radius:20px; border:1px solid rgba(255,255,255,0.25); box-shadow:0 18px 40px rgba(15,23,42,0.18);"
                                                             >
+                                                            </div>
                                                         @else
                                                             <div class="chapter-note" style="margin-top:0;">
-                                                                Poster gambar untuk rangkuman ini belum tersedia. Klik "Perbarui Rangkuman" untuk membuat versi poster AI terbaru.
+                                                                Poster gambar untuk rangkuman ini belum tersedia. Klik "Perbarui Rangkuman" untuk membuat poster rangkuman terbaru.
                                                             </div>
                                                         @endif
                                                     </div>
