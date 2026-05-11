@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     imagemagick \
+    librsvg2-bin \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libmagickwand-dev \
@@ -19,8 +20,14 @@ RUN apt-get update && apt-get install -y \
     zip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install bcmath gd mbstring pdo_mysql zip \
-    && pecl install imagick \
+    && pecl install imagick-3.7.0 \
     && docker-php-ext-enable imagick \
+    && if [ -f /etc/ImageMagick-6/policy.xml ]; then \
+         sed -i 's/rights="none" pattern="SVG"/rights="read|write" pattern="SVG"/g' /etc/ImageMagick-6/policy.xml; \
+         sed -i 's/rights="none" pattern="MVG"/rights="read|write" pattern="MVG"/g' /etc/ImageMagick-6/policy.xml; \
+         sed -i 's/rights="none" pattern="PS"/rights="read|write" pattern="PS"/g' /etc/ImageMagick-6/policy.xml; \
+         sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/g' /etc/ImageMagick-6/policy.xml; \
+       fi \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

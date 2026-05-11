@@ -41,21 +41,26 @@ Jika pakai database Railway:
 
 ## 4. Build dan start command
 
-Railway bisa membaca `Procfile`:
+Project ini **wajib** dibangun via `Dockerfile` di repo (bukan Nixpacks)
+karena fitur poster rangkuman butuh ekstensi PHP `imagick` + `librsvg`.
 
-- Start: `php artisan serve --host=0.0.0.0 --port=$PORT`
+File `railway.json` di root sudah memaksa builder `DOCKERFILE`:
 
-Jika Railway meminta build command manual, pakai:
+```json
+{
+  "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
+  "deploy": { "startCommand": "railway-start" }
+}
+```
 
-- `composer install --no-dev --optimize-autoloader`
-- `php artisan config:clear`
-- `php artisan route:clear`
-- `php artisan view:clear`
-- `php artisan migrate --force`
+Kalau Railway terlanjur sempat pakai Nixpacks, di service Railway:
+buka `Settings` → `Build` → pastikan `Builder = Dockerfile`, lalu Redeploy.
+
+Start command sudah ditangani oleh `railway-start.sh`:
+
 - `php artisan storage:link`
-- `php artisan config:cache`
-- `php artisan route:cache`
-- `php artisan view:cache`
+- `php artisan migrate --force`
+- `php artisan serve --host=0.0.0.0 --port=$PORT`
 
 ## 5. Kalau deploy sukses tapi HTTP 500
 
@@ -84,3 +89,12 @@ Cek urutan ini:
 
 - `route:cache` gagal  
   Ada bentrok nama route.
+
+- `Poster rangkuman belum bisa dikonversi ke PNG karena ekstensi Imagick belum terpasang di server.`  
+  Railway sedang pakai Nixpacks (bukan Dockerfile). Pastikan `railway.json`
+  ikut ter-commit, lalu di Railway → Service → `Settings` → `Build` → set
+  `Builder = Dockerfile`, kemudian Redeploy.
+
+- `attempt to perform an operation not allowed by the security policy 'SVG'`  
+  Imagick sudah aktif tapi ImageMagick mem-blokir SVG. Pastikan Dockerfile
+  terbaru sudah di-deploy (sudah mengubah `/etc/ImageMagick-6/policy.xml`).
