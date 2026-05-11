@@ -13,11 +13,12 @@ class HuggingFaceSummaryVisualService
     {
         $background = $this->generateBackgroundImage($materi, $bab, $summary);
         $svg = $this->buildPosterSvg($materi, $bab, $summary, $background);
+        $png = $this->rasterizeSvgToPng($svg);
 
         return [
-            'binary' => $svg,
-            'mime_type' => 'image/svg+xml',
-            'extension' => 'svg',
+            'binary' => $png,
+            'mime_type' => 'image/png',
+            'extension' => 'png',
         ];
     }
 
@@ -217,6 +218,39 @@ class HuggingFaceSummaryVisualService
   {$exampleBlock}
 </svg>
 SVG;
+    }
+
+    private function rasterizeSvgToPng(string $svg): string
+    {
+        if (!class_exists(\Imagick::class) || !class_exists(\ImagickPixel::class)) {
+            throw new GeminiCoverException(
+                'Poster rangkuman belum bisa dikonversi ke PNG karena ekstensi Imagick belum terpasang di server.'
+            );
+        }
+
+        try {
+            $imagick = new \Imagick();
+            $imagick->setBackgroundColor(new \ImagickPixel('white'));
+            $imagick->setResolution(144, 144);
+            $imagick->readImageBlob($svg);
+            $imagick->setImageFormat('png');
+
+            $png = $imagick->getImagesBlob();
+            $imagick->clear();
+            $imagick->destroy();
+
+            if ($png === '') {
+                throw new GeminiCoverException('Hasil konversi poster rangkuman ke PNG kosong.');
+            }
+
+            return $png;
+        } catch (GeminiCoverException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            throw new GeminiCoverException(
+                'Konversi poster rangkuman ke PNG gagal. Pastikan Imagick aktif dan mendukung rasterisasi SVG.'
+            );
+        }
     }
 
     /**
