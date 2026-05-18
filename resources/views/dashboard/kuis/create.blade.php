@@ -211,7 +211,7 @@
                                 Tambah
                             </button>
                         </div>
-                        <div class="section-note">Tips: Gunakan tipe soal yang sesuai. Pilihan ganda untuk evaluasi cepat, essay untuk jawaban mendalam, listening/speaking untuk latihan audio.</div>
+                        <div class="section-note">Tips: Pilihan ganda untuk evaluasi cepat, essay untuk jawaban mendalam dengan koreksi keyword.</div>
                         <div class="ai-generate-panel">
                             <div class="section-title"><i data-lucide="sparkles"></i> Generate Soal dari Materi</div>
                             <div class="section-subtitle">Gemini akan membuat draft pilihan ganda dari isi materi yang dipilih. Hasilnya tetap bisa kamu edit sebelum simpan.</div>
@@ -221,8 +221,6 @@
                                     <select id="ai_jenis_soal">
                                         <option value="pilihan" selected>Pilihan Ganda</option>
                                         <option value="essay">Essay</option>
-                                        <option value="listening">Listening</option>
-                                        <option value="speaking">Speaking</option>
                                     </select>
                                 </div>
                                 <div class="form-group" style="margin-bottom:0;">
@@ -369,8 +367,6 @@
                         <select name="pertanyaan[${index}][tipe]" class="q-type visually-hidden" required aria-label="Tipe Soal">
                             <option value="pilihan">Pilihan Ganda</option>
                             <option value="essay">Essay</option>
-                            <option value="listening">Listening</option>
-                            <option value="speaking">Speaking</option>
                         </select>
                         <div class="type-grid" role="group" aria-label="Pilih jenis soal">
                             <button type="button" class="type-card active" data-type="pilihan">
@@ -386,22 +382,6 @@
                                 <span>
                                     <span class="type-card-title">Essay</span>
                                     <span class="type-card-desc">Jawaban teks dengan keyword koreksi.</span>
-                                </span>
-                                <span class="type-card-check"></span>
-                            </button>
-                            <button type="button" class="type-card" data-type="listening">
-                                <span class="type-card-icon"><i data-lucide="headphones"></i></span>
-                                <span>
-                                    <span class="type-card-title">Listening</span>
-                                    <span class="type-card-desc">Siswa menjawab setelah audio diputar.</span>
-                                </span>
-                                <span class="type-card-check"></span>
-                            </button>
-                            <button type="button" class="type-card" data-type="speaking">
-                                <span class="type-card-icon"><i data-lucide="mic"></i></span>
-                                <span>
-                                    <span class="type-card-title">Speaking</span>
-                                    <span class="type-card-desc">Latihan pengucapan dengan target audio.</span>
                                 </span>
                                 <span class="type-card-check"></span>
                             </button>
@@ -454,44 +434,6 @@
                             </select>
                         </div>
                     </div>
-                    <div class="q-listening" style="margin-top:0.75rem; display:none;">
-                        <div class="form-group">
-                            <label>Audio File (mp3/wav/ogg)</label>
-                            <input type="file" name="pertanyaan_audio[${index}]">
-                        </div>
-                        <div class="form-group">
-                            <label>Teks untuk TTS (opsional)</label>
-                            <textarea name="pertanyaan[${index}][audio_text]" rows="2" placeholder="Jika tidak upload audio, isi teks ini"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Bahasa TTS</label>
-                            <select name="pertanyaan[${index}][bahasa]">
-                                <option value="en-US">en-US</option>
-                                <option value="id-ID">id-ID</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="q-speaking" style="margin-top:0.75rem; display:none;">
-                        <div class="form-group">
-                            <label>Jawaban Target (English)</label>
-                            <input type="text" name="pertanyaan[${index}][jawaban_teks]" placeholder="Contoh: I go to school">
-                        </div>
-                        <div class="form-group">
-                            <label>Audio Contoh (mp3/wav/ogg)</label>
-                            <input type="file" name="pertanyaan_audio[${index}]">
-                        </div>
-                        <div class="form-group">
-                            <label>Teks untuk TTS (opsional)</label>
-                            <textarea name="pertanyaan[${index}][audio_text]" rows="2" placeholder="Jika tidak upload audio, isi teks ini"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Bahasa ASR/TTS</label>
-                            <select name="pertanyaan[${index}][bahasa]">
-                                <option value="en-US">en-US</option>
-                                <option value="id-ID">id-ID</option>
-                            </select>
-                        </div>
-                    </div>
                 `;
                 wrapper.querySelector('.remove-question').addEventListener('click', () => {
                     wrapper.remove();
@@ -507,12 +449,6 @@
                 const essayFields = Array.from(essay.querySelectorAll('input, textarea, select'));
                 const essayJawaban = essay.querySelector('textarea[name$="[jawaban_teks]"]');
                 const essayKeyword = essay.querySelector('input[name$="[keyword]"]');
-                const listening = wrapper.querySelector('.q-listening');
-                const listeningFields = Array.from(listening.querySelectorAll('input, textarea, select'));
-                const speaking = wrapper.querySelector('.q-speaking');
-                const speakingFields = Array.from(speaking.querySelectorAll('input, textarea, select'));
-                const speakingJawaban = speaking.querySelector('input[name$="[jawaban_teks]"]');
-
                 function setRequired(elements, required) {
                     elements.forEach(el => {
                         if (required) {
@@ -541,58 +477,20 @@
                         choices.style.display = 'none';
                         answerWrap.style.display = 'none';
                         essay.style.display = 'block';
-                        listening.style.display = 'none';
-                        speaking.style.display = 'none';
                         setRequired(choiceInputs, false);
                         setRequired([answerSelect], false);
                         setRequired([essayJawaban, essayKeyword], true);
-                        setRequired([speakingJawaban], false);
                         setDisabled([...choiceInputs, answerSelect], true);
                         setDisabled(essayFields, false);
-                        setDisabled(listeningFields, true);
-                        setDisabled(speakingFields, true);
-                    } else if (val === 'listening') {
-                        choices.style.display = 'grid';
-                        answerWrap.style.display = 'block';
-                        essay.style.display = 'none';
-                        listening.style.display = 'block';
-                        speaking.style.display = 'none';
-                        setRequired(choiceInputs, true);
-                        setRequired([answerSelect], true);
-                        setRequired([essayJawaban, essayKeyword], false);
-                        setRequired([speakingJawaban], false);
-                        setDisabled([...choiceInputs, answerSelect], false);
-                        setDisabled(essayFields, true);
-                        setDisabled(listeningFields, false);
-                        setDisabled(speakingFields, true);
-                    } else if (val === 'speaking') {
-                        choices.style.display = 'none';
-                        answerWrap.style.display = 'none';
-                        essay.style.display = 'none';
-                        listening.style.display = 'none';
-                        speaking.style.display = 'block';
-                        setRequired(choiceInputs, false);
-                        setRequired([answerSelect], false);
-                        setRequired([essayJawaban, essayKeyword], false);
-                        setRequired([speakingJawaban], true);
-                        setDisabled([...choiceInputs, answerSelect], true);
-                        setDisabled(essayFields, true);
-                        setDisabled(listeningFields, true);
-                        setDisabled(speakingFields, false);
                     } else {
                         choices.style.display = 'grid';
                         answerWrap.style.display = 'block';
                         essay.style.display = 'none';
-                        listening.style.display = 'none';
-                        speaking.style.display = 'none';
                         setRequired(choiceInputs, true);
                         setRequired([answerSelect], true);
                         setRequired([essayJawaban, essayKeyword], false);
-                        setRequired([speakingJawaban], false);
                         setDisabled([...choiceInputs, answerSelect], false);
                         setDisabled(essayFields, true);
-                        setDisabled(listeningFields, true);
-                        setDisabled(speakingFields, true);
                     }
                 }
 
@@ -634,12 +532,6 @@
                 const essayJawaban = wrapper.querySelector('.q-essay textarea[name$="[jawaban_teks]"]');
                 const essayKeyword = wrapper.querySelector('.q-essay input[name$="[keyword]"]');
                 const essayBahasa = wrapper.querySelector('.q-essay select[name$="[bahasa]"]');
-                const listeningAudioText = wrapper.querySelector('.q-listening textarea[name$="[audio_text]"]');
-                const listeningBahasa = wrapper.querySelector('.q-listening select[name$="[bahasa]"]');
-                const speakingJawaban = wrapper.querySelector('.q-speaking input[name$="[jawaban_teks]"]');
-                const speakingAudioText = wrapper.querySelector('.q-speaking textarea[name$="[audio_text]"]');
-                const speakingBahasa = wrapper.querySelector('.q-speaking select[name$="[bahasa]"]');
-
                 if (textInput) textInput.value = questionData.teks || '';
                 if (typeSelect) {
                     typeSelect.value = questionData.tipe || 'pilihan';
@@ -653,11 +545,6 @@
                 if (essayJawaban) essayJawaban.value = questionData.jawaban_teks || '';
                 if (essayKeyword) essayKeyword.value = questionData.keyword || '';
                 if (essayBahasa) essayBahasa.value = questionData.bahasa || 'id-ID';
-                if (listeningAudioText) listeningAudioText.value = questionData.audio_text || '';
-                if (listeningBahasa) listeningBahasa.value = questionData.bahasa || 'id-ID';
-                if (speakingJawaban) speakingJawaban.value = questionData.jawaban_teks || '';
-                if (speakingAudioText) speakingAudioText.value = questionData.audio_text || '';
-                if (speakingBahasa) speakingBahasa.value = questionData.bahasa || 'id-ID';
             }
 
             function replaceQuestions(questions) {

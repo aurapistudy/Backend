@@ -62,8 +62,8 @@
             <h3 class="section-title">Jawaban</h3>
             <p class="section-desc">
                 Ucapkan:
-                <br>• "jawab A/B/C/D" (pilihan & listening)
-                <br>• "jawab ..." (essay, speaking)
+                <br>• "jawab A/B/C/D" (pilihan ganda)
+                <br>• "jawab ..." (essay)
             </p>
         </section>
     </div>

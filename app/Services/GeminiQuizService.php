@@ -26,7 +26,7 @@ class GeminiQuizService
         }
 
         $jumlahSoal = max(1, min($jumlahSoal, 10));
-        $jenisSoal = in_array($jenisSoal, ['pilihan', 'essay', 'listening', 'speaking'], true)
+        $jenisSoal = in_array($jenisSoal, ['pilihan', 'essay'], true)
             ? $jenisSoal
             : 'pilihan';
 
@@ -115,55 +115,6 @@ class GeminiQuizService
                 'tipe' => 'essay',
                 'jawaban_teks' => $jawabanTeks,
                 'keyword' => $keyword,
-                'bahasa' => 'id-ID',
-            ];
-        }
-
-        if ($jenisSoal === 'listening') {
-            $opsi = $question['opsi'] ?? [];
-            $benar = strtoupper(trim((string) ($question['benar'] ?? '')));
-            $audioText = trim((string) ($question['audio_text'] ?? ''));
-
-            if (
-                !is_array($opsi)
-                || trim((string) ($opsi['A'] ?? '')) === ''
-                || trim((string) ($opsi['B'] ?? '')) === ''
-                || trim((string) ($opsi['C'] ?? '')) === ''
-                || trim((string) ($opsi['D'] ?? '')) === ''
-                || !in_array($benar, ['A', 'B', 'C', 'D'], true)
-                || $audioText === ''
-            ) {
-                return null;
-            }
-
-            return [
-                'teks' => $textQuestion,
-                'tipe' => 'listening',
-                'opsi' => [
-                    'A' => trim((string) $opsi['A']),
-                    'B' => trim((string) $opsi['B']),
-                    'C' => trim((string) $opsi['C']),
-                    'D' => trim((string) $opsi['D']),
-                ],
-                'benar' => $benar,
-                'audio_text' => $audioText,
-                'bahasa' => 'id-ID',
-            ];
-        }
-
-        if ($jenisSoal === 'speaking') {
-            $jawabanTeks = trim((string) ($question['jawaban_teks'] ?? ''));
-            $audioText = trim((string) ($question['audio_text'] ?? ''));
-
-            if ($jawabanTeks === '' || $audioText === '') {
-                return null;
-            }
-
-            return [
-                'teks' => $textQuestion,
-                'tipe' => 'speaking',
-                'jawaban_teks' => $jawabanTeks,
-                'audio_text' => $audioText,
                 'bahasa' => 'id-ID',
             ];
         }
@@ -267,19 +218,6 @@ class GeminiQuizService
                 'Setiap soal wajib memiliki `keyword` berisi kata kunci penilaian, dipisahkan koma dalam satu string.',
                 'Format JSON wajib:',
                 '{"judul":"string","deskripsi":"string","pertanyaan":[{"teks":"string","jawaban_teks":"string","keyword":"kata1, kata2, kata3"}]}',
-            ]),
-            'listening' => implode("\n", [
-                'Buat draft kuis listening berdasarkan materi pembelajaran yang diberikan.',
-                'Setiap soal wajib memiliki 4 opsi A-D, satu jawaban benar, dan `audio_text` berupa teks yang nanti dipakai TTS.',
-                'Audio text harus relevan dengan soal listening.',
-                'Format JSON wajib:',
-                '{"judul":"string","deskripsi":"string","pertanyaan":[{"teks":"string","audio_text":"string","opsi":{"A":"string","B":"string","C":"string","D":"string"},"benar":"A"}]}',
-            ]),
-            'speaking' => implode("\n", [
-                'Buat draft kuis speaking berdasarkan materi pembelajaran yang diberikan.',
-                'Setiap soal wajib memiliki `jawaban_teks` sebagai target ucapan siswa dan `audio_text` untuk TTS contoh ucapan.',
-                'Format JSON wajib:',
-                '{"judul":"string","deskripsi":"string","pertanyaan":[{"teks":"string","jawaban_teks":"string","audio_text":"string"}]}',
             ]),
             default => implode("\n", [
                 'Buat draft kuis pilihan ganda berdasarkan materi pembelajaran yang diberikan.',

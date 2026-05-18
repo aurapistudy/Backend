@@ -167,11 +167,9 @@
                             <div class="form-group">
                                 <label>Tipe Soal</label>
                                 <select name="pertanyaan[{{ $index }}][tipe]" class="q-type" required>
-                                    <option value="pilihan" {{ $pertanyaan->tipe === 'pilihan' ? 'selected' : '' }}>Pilihan Ganda</option>
-                                    <option value="essay" {{ $pertanyaan->tipe === 'essay' ? 'selected' : '' }}>Essay</option>
-                                    <option value="listening" {{ $pertanyaan->tipe === 'listening' ? 'selected' : '' }}>Listening</option>
-                                    <option value="speaking" {{ $pertanyaan->tipe === 'speaking' ? 'selected' : '' }}>Speaking</option>
-                                </select>
+                                    <option value="pilihan" {{ in_array($pertanyaan->tipe, ['pilihan', 'listening'], true) ? 'selected' : '' }}>Pilihan Ganda</option>
+                                    <option value="essay" {{ in_array($pertanyaan->tipe, ['essay', 'speaking'], true) ? 'selected' : '' }}>Essay</option>
+                                                                    </select>
                             </div>
                             <div class="form-group q-answer">
                                 <label>Jawaban Benar</label>
@@ -217,54 +215,10 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="q-listening" style="margin-top:0.75rem; display:none;">
-                                <div class="form-group">
-                                    <label>Audio File (mp3/wav/ogg)</label>
-                                    <input type="file" name="pertanyaan_audio[{{ $index }}]">
-                                    @if($pertanyaan->audio_path)
-                                        <p class="desc" style="margin-top:0.25rem;">File saat ini: {{ basename($pertanyaan->audio_path) }}</p>
-                                    @endif
                                 </div>
-                                <div class="form-group">
-                                    <label>Teks untuk TTS (opsional)</label>
-                                    <textarea name="pertanyaan[{{ $index }}][audio_text]" rows="2">{{ $pertanyaan->audio_text }}</textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>Bahasa TTS</label>
-                                    <select name="pertanyaan[{{ $index }}][bahasa]">
-                                        <option value="en-US" {{ $pertanyaan->bahasa === 'en-US' ? 'selected' : '' }}>en-US</option>
-                                        <option value="id-ID" {{ $pertanyaan->bahasa === 'id-ID' ? 'selected' : '' }}>id-ID</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="q-speaking" style="margin-top:0.75rem; display:none;">
-                                <div class="form-group">
-                                    <label>Jawaban Target (English)</label>
-                                    <input type="text" name="pertanyaan[{{ $index }}][jawaban_teks]" value="{{ $pertanyaan->jawaban_teks }}" placeholder="Contoh: I go to school">
-                                </div>
-                                <div class="form-group">
-                                    <label>Audio Contoh (mp3/wav/ogg)</label>
-                                    <input type="file" name="pertanyaan_audio[{{ $index }}]">
-                                    @if($pertanyaan->audio_path)
-                                        <p class="desc" style="margin-top:0.25rem;">File saat ini: {{ basename($pertanyaan->audio_path) }}</p>
-                                    @endif
-                                </div>
-                                <div class="form-group">
-                                    <label>Teks untuk TTS (opsional)</label>
-                                    <textarea name="pertanyaan[{{ $index }}][audio_text]" rows="2">{{ $pertanyaan->audio_text }}</textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>Bahasa ASR/TTS</label>
-                                    <select name="pertanyaan[{{ $index }}][bahasa]">
-                                        <option value="en-US" {{ $pertanyaan->bahasa === 'en-US' ? 'selected' : '' }}>en-US</option>
-                                        <option value="id-ID" {{ $pertanyaan->bahasa === 'id-ID' ? 'selected' : '' }}>id-ID</option>
-                                    </select>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
-                    @endforeach
-                </div>
-            </div>
+                    </div>
 
                     <div class="card actions">
                         <button class="btn btn-primary" type="submit">Simpan Perubahan</button>
@@ -364,9 +318,7 @@
                         <select name="pertanyaan[${index}][tipe]" class="q-type" required>
                             <option value="pilihan">Pilihan Ganda</option>
                             <option value="essay">Essay</option>
-                            <option value="listening">Listening</option>
-                            <option value="speaking">Speaking</option>
-                        </select>
+                                                                                </select>
                     </div>
                     <div class="form-group q-answer">
                         <label>Jawaban Benar</label>
@@ -413,44 +365,6 @@
                             </select>
                         </div>
                     </div>
-                    <div class="q-listening" style="margin-top:0.75rem; display:none;">
-                        <div class="form-group">
-                            <label>Audio File (mp3/wav/ogg)</label>
-                            <input type="file" name="pertanyaan_audio[${index}]">
-                        </div>
-                        <div class="form-group">
-                            <label>Teks untuk TTS (opsional)</label>
-                            <textarea name="pertanyaan[${index}][audio_text]" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Bahasa TTS</label>
-                            <select name="pertanyaan[${index}][bahasa]">
-                                <option value="en-US">en-US</option>
-                                <option value="id-ID">id-ID</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="q-speaking" style="margin-top:0.75rem; display:none;">
-                        <div class="form-group">
-                            <label>Jawaban Target (English)</label>
-                            <input type="text" name="pertanyaan[${index}][jawaban_teks]" placeholder="Contoh: I go to school">
-                        </div>
-                        <div class="form-group">
-                            <label>Audio Contoh (mp3/wav/ogg)</label>
-                            <input type="file" name="pertanyaan_audio[${index}]">
-                        </div>
-                        <div class="form-group">
-                            <label>Teks untuk TTS (opsional)</label>
-                            <textarea name="pertanyaan[${index}][audio_text]" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Bahasa ASR/TTS</label>
-                            <select name="pertanyaan[${index}][bahasa]">
-                                <option value="en-US">en-US</option>
-                                <option value="id-ID">id-ID</option>
-                            </select>
-                        </div>
-                    </div>
                 `;
                 attachRemove(wrapper.querySelector('.remove-question'));
                 attachToggle(wrapper);
@@ -475,12 +389,6 @@
                 const essayFields = Array.from(essay.querySelectorAll('input, textarea, select'));
                 const essayJawaban = essay.querySelector('textarea[name$="[jawaban_teks]"]');
                 const essayKeyword = essay.querySelector('input[name$="[keyword]"]');
-                const listening = wrapper.querySelector('.q-listening');
-                const listeningFields = Array.from(listening.querySelectorAll('input, textarea, select'));
-                const speaking = wrapper.querySelector('.q-speaking');
-                const speakingFields = Array.from(speaking.querySelectorAll('input, textarea, select'));
-                const speakingJawaban = speaking.querySelector('input[name$="[jawaban_teks]"]');
-
                 function setRequired(elements, required) {
                     elements.forEach(el => {
                         if (required) {
@@ -503,58 +411,20 @@
                         choices.style.display = 'none';
                         answerWrap.style.display = 'none';
                         essay.style.display = 'block';
-                        listening.style.display = 'none';
-                        speaking.style.display = 'none';
                         setRequired(choiceInputs, false);
                         setRequired([answerSelect], false);
                         setRequired([essayJawaban, essayKeyword], true);
-                        setRequired([speakingJawaban], false);
                         setDisabled([...choiceInputs, answerSelect], true);
                         setDisabled(essayFields, false);
-                        setDisabled(listeningFields, true);
-                        setDisabled(speakingFields, true);
-                    } else if (val === 'listening') {
-                        choices.style.display = 'grid';
-                        answerWrap.style.display = 'block';
-                        essay.style.display = 'none';
-                        listening.style.display = 'block';
-                        speaking.style.display = 'none';
-                        setRequired(choiceInputs, true);
-                        setRequired([answerSelect], true);
-                        setRequired([essayJawaban, essayKeyword], false);
-                        setRequired([speakingJawaban], false);
-                        setDisabled([...choiceInputs, answerSelect], false);
-                        setDisabled(essayFields, true);
-                        setDisabled(listeningFields, false);
-                        setDisabled(speakingFields, true);
-                    } else if (val === 'speaking') {
-                        choices.style.display = 'none';
-                        answerWrap.style.display = 'none';
-                        essay.style.display = 'none';
-                        listening.style.display = 'none';
-                        speaking.style.display = 'block';
-                        setRequired(choiceInputs, false);
-                        setRequired([answerSelect], false);
-                        setRequired([essayJawaban, essayKeyword], false);
-                        setRequired([speakingJawaban], true);
-                        setDisabled([...choiceInputs, answerSelect], true);
-                        setDisabled(essayFields, true);
-                        setDisabled(listeningFields, true);
-                        setDisabled(speakingFields, false);
                     } else {
                         choices.style.display = 'grid';
                         answerWrap.style.display = 'block';
                         essay.style.display = 'none';
-                        listening.style.display = 'none';
-                        speaking.style.display = 'none';
                         setRequired(choiceInputs, true);
                         setRequired([answerSelect], true);
                         setRequired([essayJawaban, essayKeyword], false);
-                        setRequired([speakingJawaban], false);
                         setDisabled([...choiceInputs, answerSelect], false);
                         setDisabled(essayFields, true);
-                        setDisabled(listeningFields, true);
-                        setDisabled(speakingFields, true);
                     }
                 }
 
