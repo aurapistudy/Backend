@@ -85,6 +85,7 @@ class MateriController extends Controller
             'deskripsi' => 'nullable|string',
             'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
             'level_id' => 'nullable|exists:level,id',
+            'judul_bab_pertama' => 'required|string|max:200',
             'tipe_konten' => 'required|in:teks,file',
             'konten_teks' => 'nullable|string|required_if:tipe_konten,teks',
             'file_path' => "nullable|file|mimes:pdf,doc,docx|max:{$maxUploadKb}|required_if:tipe_konten,file",
@@ -104,6 +105,7 @@ class MateriController extends Controller
             'status_aktif' => 'boolean',
         ], [
             'judul.required' => 'Judul wajib diisi',
+            'judul_bab_pertama.required' => 'Judul Materi 1 wajib diisi',
             'tipe_konten.required' => 'Tipe konten Materi 1 wajib dipilih',
             'konten_teks.required_if' => 'Konten teks wajib diisi jika tipe konten adalah teks',
             'file_path.required_if' => 'File wajib diupload jika tipe konten adalah file',
@@ -122,7 +124,7 @@ class MateriController extends Controller
         $this->validateBabEntries($request);
 
         $firstBabPayload = [
-            'judul_bab' => 'Materi 1',
+            'judul_bab' => trim((string) $validated['judul_bab_pertama']),
             'urutan' => 1,
             'tipe_konten' => (string) $validated['tipe_konten'],
             'konten_teks' => $validated['tipe_konten'] === 'teks' ? ($validated['konten_teks'] ?? null) : null,

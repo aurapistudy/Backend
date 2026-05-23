@@ -1136,6 +1136,17 @@
 
                     <div class="form-group">
                         <label class="form-label">
+                            Judul Materi 1 <span class="required">*</span>
+                        </label>
+                        <input type="text" name="judul_bab_pertama" value="{{ old('judul_bab_pertama') }}" class="form-input" required placeholder="Contoh: Pengenalan Huruf, Bab 1, Anggota Tubuh">
+                        <span class="hint">Judul ini akan dipakai sebagai nama bab pertama.</span>
+                        @error('judul_bab_pertama')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
                             Tipe Konten Materi 1 <span class="required">*</span>
                         </label>
                         <select name="tipe_konten" id="tipe_konten" class="form-select" required>
@@ -2192,7 +2203,6 @@
     </script>
 </body>
 </html>
-
 
 
 
