@@ -37,6 +37,7 @@ class MateriController extends Controller
                 $query->where(function ($inner) use ($search) {
                     $inner->where('judul', 'like', "%{$search}%")
                         ->orWhere('deskripsi', 'like', "%{$search}%")
+                        ->orWhere('semester', 'like', "%{$search}%")
                         ->orWhere('tipe_konten', 'like', "%{$search}%")
                         ->when(ctype_digit($search), function ($idQuery) use ($search) {
                             $idQuery->orWhere('id', (int) $search);
@@ -85,6 +86,7 @@ class MateriController extends Controller
             'deskripsi' => 'nullable|string',
             'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
             'level_id' => 'nullable|exists:level,id',
+            'semester' => 'nullable|in:ganjil,genap',
             'judul_bab_pertama' => 'required|string|max:200',
             'tipe_konten' => 'required|in:teks,file',
             'konten_teks' => 'nullable|string|required_if:tipe_konten,teks',
@@ -114,6 +116,7 @@ class MateriController extends Controller
             'file_path.max' => 'Ukuran file materi melebihi batas upload server.',
             'mata_pelajaran_id.exists' => 'Kategori yang dipilih tidak valid',
             'level_id.exists' => 'Level yang dipilih tidak valid',
+            'semester.in' => 'Semester harus Ganjil atau Genap.',
             'cover_path.image' => 'Cover mata pelajaran harus berupa gambar.',
             'cover_path.mimes' => 'Format cover mata pelajaran harus JPG, JPEG, PNG, atau WEBP.',
             'cover_path.max' => 'Ukuran cover mata pelajaran terlalu besar. Maksimal 5 MB. Silakan kompres atau pilih gambar yang lebih kecil.',
@@ -282,12 +285,14 @@ class MateriController extends Controller
             'deskripsi' => 'nullable|string',
             'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
             'level_id' => 'nullable|exists:level,id',
+            'semester' => 'nullable|in:ganjil,genap',
             'cover_path' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'status_aktif' => 'boolean',
         ], [
             'judul.required' => 'Judul wajib diisi',
             'mata_pelajaran_id.exists' => 'Kategori yang dipilih tidak valid',
             'level_id.exists' => 'Level yang dipilih tidak valid',
+            'semester.in' => 'Semester harus Ganjil atau Genap.',
             'cover_path.image' => 'Cover mata pelajaran harus berupa gambar.',
             'cover_path.mimes' => 'Format cover mata pelajaran harus JPG, JPEG, PNG, atau WEBP.',
             'cover_path.max' => 'Ukuran cover mata pelajaran terlalu besar. Maksimal 5 MB. Silakan kompres atau pilih gambar yang lebih kecil.',

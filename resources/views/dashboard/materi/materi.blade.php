@@ -822,6 +822,7 @@
                                     <th>Tanggal</th>
                                     <th>Judul</th>
                                     <th>Level</th>
+                                    <th>Semester</th>
                                     <th>Jumlah Materi</th>
                                     <th>Status</th>
                                     <th>Aksi</th>
@@ -836,6 +837,7 @@
                                             <span class="materi-title-text" title="{{ $item->judul }}">{{ $item->judul }}</span>
                                         </td>
                                         <td>{{ $item->level?->nama ?? '-' }}</td>
+                                        <td>{{ $item->semester ? ucfirst($item->semester) : '-' }}</td>
                                         <td style="text-align:center;">
                                             <span class="badge badge-neutral">
                                                 {{ $item->bab_count }}

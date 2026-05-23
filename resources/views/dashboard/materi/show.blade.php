@@ -973,6 +973,10 @@
                                         <div class="chapter-stat-value">{{ $materi->level->nama ?? '-' }}</div>
                                     </div>
                                     <div class="chapter-stat">
+                                        <div class="chapter-stat-label">Semester</div>
+                                        <div class="chapter-stat-value">{{ $materi->semester ? ucfirst($materi->semester) : '-' }}</div>
+                                    </div>
+                                    <div class="chapter-stat">
                                         <div class="chapter-stat-label">Dibuat Oleh</div>
                                         <div class="chapter-stat-value">{{ $materi->pengguna->nama ?? '-' }}</div>
                                     </div>

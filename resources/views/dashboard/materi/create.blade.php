@@ -1024,6 +1024,18 @@
                                         <span class="error-message">{{ $message }}</span>
                                     @enderror
                                 </div>
+                                <div class="form-group">
+                                    <label class="form-label">Semester</label>
+                                    <select name="semester" class="form-select">
+                                        <option value="">Pilih Semester</option>
+                                        <option value="ganjil" {{ old('semester') === 'ganjil' ? 'selected' : '' }}>Ganjil</option>
+                                        <option value="genap" {{ old('semester') === 'genap' ? 'selected' : '' }}>Genap</option>
+                                    </select>
+                                    <span class="hint">Gunakan Ganjil untuk semester gasal, dan Genap untuk semester genap.</span>
+                                    @error('semester')
+                                        <span class="error-message">{{ $message }}</span>
+                                    @enderror
+                                </div>
                             </div>
 
                             <div class="book-cover-caption" style="margin-top: 1.25rem;">
@@ -2203,7 +2215,6 @@
     </script>
 </body>
 </html>
-
 
 
 
