@@ -2,18 +2,27 @@
     body:not(.siswa-layout) {
         scroll-behavior: smooth;
     }
+    body:not(.siswa-layout).admin-sidebar-open {
+        overflow: hidden;
+    }
+
+    body:not(.siswa-layout) .mobile-menu-toggle {
+        display: none !important;
+    }
+
     body:not(.siswa-layout) .admin-menu-toggle-inline {
-        width: 28px;
-        height: 28px;
-        border-radius: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
         border: none;
-        background: transparent;
+        background: rgba(255, 255, 255, 0.14);
         color: #FFFFFF;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         padding: 0;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
     }
 
     body:not(.siswa-layout) .admin-header-left {
@@ -64,19 +73,12 @@
         letter-spacing: 0;
     }
 
-    body:not(.siswa-layout) .sidebar.closed {
-        transform: translateX(-100%);
-    }
-
-    body:not(.siswa-layout) .main-content.full {
-        margin-left: 0;
-    }
-
     body:not(.siswa-layout) .admin-sidebar-overlay {
         position: fixed;
         inset: 0;
         background: rgba(0, 0, 0, 0.45);
-        z-index: 1100;
+        backdrop-filter: blur(3px);
+        z-index: 1190;
         display: none;
     }
 
@@ -130,17 +132,24 @@
     }
 
 @media (max-width: 900px) {
-    body:not(.siswa-layout) .dashboard-container {
-        flex-direction: column;
-    }
-
     body:not(.siswa-layout) .sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: min(82vw, 320px);
+        max-width: 320px;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.28s ease;
+        z-index: 1200;
     }
 
-    body:not(.siswa-layout) .main-content {
+    body:not(.siswa-layout).admin-sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    body:not(.siswa-layout) .main-content,
+    body:not(.siswa-layout) .main-content.full {
         margin-left: 0;
     }
 
@@ -149,8 +158,16 @@
         top: 0;
         z-index: 100;
         padding: 1rem 1.25rem;
-        flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    body:not(.siswa-layout) .header-title {
+        font-size: 1rem;
+    }
+
+    body:not(.siswa-layout) .user-info,
+    body:not(.siswa-layout) .user-info-top {
+        max-width: calc(100vw - 150px);
     }
 
     body:not(.siswa-layout) .content-area {
@@ -158,14 +175,26 @@
     }
 
     body:not(.siswa-layout) .sidebar-nav {
-        padding: 0.75rem 0;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 0.5rem;
+        padding: 1rem 0;
+        display: block;
     }
 
     body:not(.siswa-layout) .nav-item {
-        margin: 0 0.5rem;
+        margin: 0.25rem 0.85rem;
+    }
+
+    body:not(.siswa-layout) .nav-item a {
+        padding: 0.85rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    body:not(.siswa-layout) .logout-btn {
+        margin: 0.85rem;
+    }
+
+    body:not(.siswa-layout) .admin-menu-toggle-inline {
+        display: inline-flex;
+        flex: 0 0 auto;
     }
 }
 </style>
@@ -370,7 +399,6 @@
 
     function initAdminToggle() {
         const sidebar = document.querySelector('.sidebar');
-        const main = document.querySelector('.main-content');
         const overlay = document.getElementById('adminSidebarOverlay');
         const header = document.querySelector('.header-bar');
 
@@ -383,6 +411,7 @@
             toggle = document.createElement('button');
             toggle.className = 'admin-menu-toggle-inline';
             toggle.setAttribute('aria-label', 'Toggle sidebar');
+            toggle.setAttribute('type', 'button');
             toggle.innerHTML = '<i data-lucide="menu"></i>';
         }
 
@@ -409,26 +438,51 @@
             return;
         }
 
-        function setClosed(closed) {
-            sidebar.classList.toggle('closed', closed);
-            if (main) {
-                main.classList.toggle('full', closed);
+        function isMobileViewport() {
+            return window.innerWidth <= 900;
+        }
+
+        function setOpen(open) {
+            if (!isMobileViewport()) {
+                document.body.classList.remove('admin-sidebar-open');
+                if (overlay) {
+                    overlay.classList.remove('active');
+                }
+                return;
             }
+
+            document.body.classList.toggle('admin-sidebar-open', open);
             if (overlay) {
-                overlay.classList.toggle('active', closed && window.innerWidth <= 1024);
+                overlay.classList.toggle('active', open);
             }
+        }
+
+        function closeSidebar() {
+            setOpen(false);
         }
 
         toggle.addEventListener('click', function() {
-            const isClosed = sidebar.classList.contains('closed');
-            setClosed(!isClosed);
+            const nextState = !document.body.classList.contains('admin-sidebar-open');
+            setOpen(nextState);
         });
 
         if (overlay) {
-            overlay.addEventListener('click', function() {
-                setClosed(false);
-            });
+            overlay.addEventListener('click', closeSidebar);
         }
+
+        window.addEventListener('resize', function() {
+            if (!isMobileViewport()) {
+                closeSidebar();
+            }
+        });
+
+        document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                closeSidebar();
+            });
+        });
+
+        setOpen(false);
     }
 
     if (document.readyState === 'loading') {
