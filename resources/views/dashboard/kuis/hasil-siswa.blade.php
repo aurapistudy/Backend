@@ -99,8 +99,12 @@
                     <span class="tag">Ringkasan Siswa</span>
                     <div class="siswa-summary">
                         <div class="summary-item">
-                            <div class="summary-label">Total Hasil</div>
-                            <div class="summary-value">{{ $hasil->total() }}</div>
+                            <div class="summary-label">Total Pengerjaan</div>
+                            <div class="summary-value">{{ $ringkasan['total_hasil'] }}</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Kuis Unik</div>
+                            <div class="summary-value">{{ $ringkasan['kuis_unik'] }}</div>
                         </div>
                         <div class="summary-item">
                             <div class="summary-label">Level</div>

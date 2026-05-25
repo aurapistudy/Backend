@@ -180,6 +180,9 @@ class KuisController extends Controller
             ->whereHas('kuisHasil')
             ->with(['siswa.level'])
             ->withCount('kuisHasil as total_hasil')
+            ->withCount(['kuisHasil as kuis_unik_count' => function ($query) {
+                $query->select(DB::raw('count(distinct kuis_id)'));
+            }])
             ->withCount(['kuisHasil as perlu_koreksi_count' => function ($query) {
                 $query->whereHas('jawaban', function ($jawabanQuery) {
                     $jawabanQuery->where('status_koreksi', 'pending');
@@ -233,7 +236,13 @@ class KuisController extends Controller
 
         $pengguna->load('siswa.level');
 
-        return view('dashboard.kuis.hasil-siswa', compact('pengguna', 'hasil', 'search'));
+        $hasilQuery = KuisHasil::query()->where('pengguna_id', $pengguna->id);
+        $ringkasan = [
+            'total_hasil' => (clone $hasilQuery)->count(),
+            'kuis_unik' => (clone $hasilQuery)->distinct()->count('kuis_id'),
+        ];
+
+        return view('dashboard.kuis.hasil-siswa', compact('pengguna', 'hasil', 'search', 'ringkasan'));
     }
 
     public function hasilShow(KuisHasil $hasil)

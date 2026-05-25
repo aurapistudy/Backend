@@ -105,7 +105,8 @@
                                 <th>No</th>
                                 <th>Siswa</th>
                                 <th>Level</th>
-                                <th>Total Hasil</th>
+                                <th>Total Pengerjaan</th>
+                                <th>Kuis Unik</th>
                                 <th>Perlu Koreksi</th>
                                 <th>Terakhir Mengerjakan</th>
                                 <th>Rata-rata Skor</th>
@@ -130,6 +131,7 @@
                                     </td>
                                     <td>{{ $item->siswa?->level?->nama ?? '-' }}</td>
                                     <td>{{ $item->total_hasil }}</td>
+                                    <td>{{ $item->kuis_unik_count }}</td>
                                     <td>
                                         @if($item->perlu_koreksi_count > 0)
                                             <span class="badge badge-pending">{{ $item->perlu_koreksi_count }} hasil</span>
@@ -150,7 +152,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8">Belum ada siswa dengan hasil kuis.</td>
+                                    <td colspan="9">Belum ada siswa dengan hasil kuis.</td>
                                 </tr>
                             @endforelse
                         </tbody>
