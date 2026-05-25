@@ -620,7 +620,13 @@
                                         <td>{{ $item->email }}</td>
                                         <td>
                                             <span class="role-badge {{ $item->peran }}">
-                                                {{ ucfirst($item->peran) }}
+                                                @if($item->peran === 'admin')
+                                                    Administrator
+                                                @elseif($item->peran === 'guru')
+                                                    Guru Mapel
+                                                @else
+                                                    Siswa
+                                                @endif
                                             </span>
                                         </td>
                                         <td>

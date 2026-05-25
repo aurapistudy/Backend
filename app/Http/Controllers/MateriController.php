@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersByAssignedMapel;
 use App\Exceptions\GeminiCoverException;
 use App\Models\Level;
 use App\Models\Materi;
@@ -18,6 +19,8 @@ use Illuminate\Support\Str;
 
 class MateriController extends Controller
 {
+    use FiltersByAssignedMapel;
+
     private const PDF_TARGET_MAX_KB = 10240;
 
     /**
@@ -28,8 +31,9 @@ class MateriController extends Controller
         $search = trim((string) request('search', ''));
         $user = Auth::user();
 
-        $materi = Materi::with(['pengguna', 'level', 'mataPelajaran'])
-            ->withCount('bab')
+        $materi = $this->applyMapelFilterToMateri(
+            Materi::with(['pengguna', 'level', 'mataPelajaran'])->withCount('bab')
+        )
             ->when($this->isSiswaApiRequest(), function ($query) {
                 $query->where('status_aktif', true);
             })
@@ -70,7 +74,9 @@ class MateriController extends Controller
     public function create()
     {
         $levels = Level::where('status_aktif', true)->orderBy('nama')->get();
-        $mataPelajarans = MataPelajaran::where('status_aktif', true)->orderBy('nama')->get();
+        $mataPelajarans = $this->applyMapelFilterToMataPelajaran(
+            MataPelajaran::where('status_aktif', true)
+        )->orderBy('nama')->get();
         return view('dashboard.materi.create', compact('levels', 'mataPelajarans'));
     }
 
@@ -125,6 +131,10 @@ class MateriController extends Controller
         ]);
 
         $this->validateBabEntries($request);
+
+        $this->authorizeMapelAccess(
+            !empty($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null
+        );
 
         $firstBabPayload = [
             'judul_bab' => trim((string) $validated['judul_bab_pertama']),
@@ -249,6 +259,10 @@ class MateriController extends Controller
             },
         ])->findOrFail($id);
 
+        if (!$this->isSiswaApiRequest()) {
+            $this->authorizeMateriAccess($materi);
+        }
+
         if ($this->isSiswaApiRequest()) {
             if (!$materi->status_aktif) {
                 return response()->json(['message' => 'Mata pelajaran tidak tersedia'], 404);
@@ -268,8 +282,11 @@ class MateriController extends Controller
     public function edit(string $id)
     {
         $materi = Materi::with('bab')->findOrFail($id);
+        $this->authorizeMateriAccess($materi);
         $levels = Level::where('status_aktif', true)->orderBy('nama')->get();
-        $mataPelajarans = MataPelajaran::where('status_aktif', true)->orderBy('nama')->get();
+        $mataPelajarans = $this->applyMapelFilterToMataPelajaran(
+            MataPelajaran::where('status_aktif', true)
+        )->orderBy('nama')->get();
         return view('dashboard.materi.edit', compact('materi', 'levels', 'mataPelajarans'));
     }
 
@@ -279,6 +296,7 @@ class MateriController extends Controller
     public function update(Request $request, string $id)
     {
         $materi = Materi::findOrFail($id);
+        $this->authorizeMateriAccess($materi);
 
         $validated = $request->validate([
             'judul' => 'required|string|max:200',
@@ -321,6 +339,10 @@ class MateriController extends Controller
         $validated['jumlah_halaman'] = null;
         $validated['status_aktif'] = $request->has('status_aktif') ? true : false;
 
+        $this->authorizeMapelAccess(
+            isset($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null
+        );
+
         $materi->update($validated);
 
         $materi = $materi->fresh();
@@ -338,6 +360,7 @@ class MateriController extends Controller
     public function destroy(string $id)
     {
         $materi = Materi::findOrFail($id);
+        $this->authorizeMateriAccess($materi);
         $filePath = $materi->file_path;
         $coverPath = $materi->cover_path;
 

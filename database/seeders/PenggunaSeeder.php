@@ -5,9 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Pengguna;
-use App\Models\Guru;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 
 class PenggunaSeeder extends Seeder
 {
@@ -21,25 +19,20 @@ class PenggunaSeeder extends Seeder
         
         if (!$existingSuperadmin) {
             // Buat pengguna superadmin
-            $superadmin = Pengguna::create([
+            Pengguna::create([
                 'nama' => 'Super Admin',
                 'email' => 'superadmin@ruma.com',
                 'kata_sandi' => Hash::make('password'),
-                'peran' => 'guru',
+                'peran' => 'admin',
                 'status_aktif' => true,
-            ]);
-
-            // Buat data guru untuk superadmin
-            Guru::create([
-                'pengguna_id' => $superadmin->id,
-                'nama_sekolah' => 'Sekolah Ruma',
             ]);
 
             $this->command->info('Superadmin berhasil dibuat!');
             $this->command->info('Email: superadmin@ruma.com');
             $this->command->info('Password: password');
         } else {
-            $this->command->info('Superadmin sudah ada di database.');
+            Pengguna::where('email', 'superadmin@ruma.com')->update(['peran' => 'admin']);
+            $this->command->info('Superadmin sudah ada di database (peran diset ke admin).');
         }
     }
 }

@@ -17,9 +17,22 @@ class DashboardController extends Controller
         if ($user && $user->peran === 'siswa') {
             return redirect('/dashboard-siswa');
         }
-        
+
+        if ($user && !$user->isStaff()) {
+            abort(403);
+        }
+
+        $mapelScope = null;
+        if ($user && $user->isGuruMapel()) {
+            $mapelScope = $user->assignedMataPelajaranIds();
+        }
+
         // Hitung statistik
-        $totalMateri = Materi::where('status_aktif', true)->count();
+        $materiQuery = Materi::where('status_aktif', true);
+        if ($mapelScope !== null) {
+            $materiQuery->whereIn('mata_pelajaran_id', $mapelScope ?: [-1]);
+        }
+        $totalMateri = $materiQuery->count();
         $totalPenggunaAktif = Pengguna::where('status_aktif', true)->count();
         $totalSesiBaca = SesiBaca::count();
         

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersByAssignedMapel;
 use App\Exceptions\GeminiCoverException;
 use App\Models\Kuis;
 use App\Models\KuisHasil;
@@ -21,11 +22,13 @@ use Illuminate\Validation\ValidationException;
 
 class KuisController extends Controller
 {
+    use FiltersByAssignedMapel;
+
     public function index(Request $request)
     {
         $search = trim((string) $request->get('search', ''));
 
-        $kuis = Kuis::with('materi')
+        $kuis = $this->applyMapelFilterToKuis(Kuis::with('materi'))
             ->withCount('pertanyaan')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
@@ -46,8 +49,9 @@ class KuisController extends Controller
 
     public function create()
     {
-        $materiList = Materi::with(['mataPelajaran', 'level', 'bab'])
-            ->where('status_aktif', true)
+        $materiList = $this->applyMapelFilterToMateri(
+            Materi::with(['mataPelajaran', 'level', 'bab'])->where('status_aktif', true)
+        )
             ->orderBy('judul')
             ->get();
 
@@ -76,6 +80,7 @@ class KuisController extends Controller
         ]);
 
         $materi = Materi::with(['mataPelajaran', 'level'])->findOrFail($validated['materi_id']);
+        $this->authorizeMateriAccess($materi);
         $bab = !empty($validated['materi_bab_id']) ? MateriBab::findOrFail($validated['materi_bab_id']) : null;
         if ($bab && (int) $bab->materi_id !== (int) $materi->id) {
             return response()->json([
@@ -107,6 +112,7 @@ class KuisController extends Controller
     {
         $validated = $this->validatePayload($request);
         $relationPayload = $this->resolveMateriRelationPayload($validated);
+        $this->authorizeKuisMateriId($relationPayload['materi_id'] ?? null);
 
         DB::transaction(function () use ($validated, $request, $relationPayload) {
             $kuis = Kuis::create([
@@ -128,13 +134,17 @@ class KuisController extends Controller
     public function show(Kuis $kui)
     {
         $kui->load(['materi', 'materiBab', 'pertanyaan.opsi']);
+        $this->authorizeKuisAccess($kui);
         return view('dashboard.kuis.show', ['kuis' => $kui]);
     }
 
     public function edit(Kuis $kui)
     {
         $kui->load('pertanyaan.opsi');
-        $materiList = Materi::with('bab')->where('status_aktif', true)
+        $this->authorizeKuisAccess($kui);
+        $materiList = $this->applyMapelFilterToMateri(
+            Materi::with('bab')->where('status_aktif', true)
+        )
             ->orderBy('judul')
             ->get();
 
@@ -143,8 +153,10 @@ class KuisController extends Controller
 
     public function update(Request $request, Kuis $kui)
     {
+        $this->authorizeKuisAccess($kui);
         $validated = $this->validatePayload($request, $kui);
         $relationPayload = $this->resolveMateriRelationPayload($validated);
+        $this->authorizeKuisMateriId($relationPayload['materi_id'] ?? null);
 
         DB::transaction(function () use ($kui, $validated, $request, $relationPayload) {
             $kui->update([
@@ -165,6 +177,7 @@ class KuisController extends Controller
 
     public function destroy(Kuis $kui)
     {
+        $this->authorizeKuisAccess($kui);
         $kui->delete();
 
         return redirect()->route('kuis.index')
@@ -177,7 +190,9 @@ class KuisController extends Controller
 
         $siswa = Pengguna::query()
             ->where('peran', 'siswa')
-            ->whereHas('kuisHasil')
+            ->whereHas('kuisHasil', function ($hasilQuery) {
+                $this->applyMapelFilterToKuisHasil($hasilQuery);
+            })
             ->with(['siswa.level'])
             ->withCount('kuisHasil as total_hasil')
             ->withCount(['kuisHasil as kuis_unik_count' => function ($query) {
@@ -212,10 +227,12 @@ class KuisController extends Controller
 
         $search = trim((string) $request->get('search', ''));
 
-        $hasil = KuisHasil::query()
-            ->with(['kuis.materi'])
-            ->withPendingFlag()
-            ->where('pengguna_id', $pengguna->id)
+        $hasil = $this->applyMapelFilterToKuisHasil(
+            KuisHasil::query()
+                ->with(['kuis.materi'])
+                ->withPendingFlag()
+                ->where('pengguna_id', $pengguna->id)
+        )
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
@@ -248,12 +265,14 @@ class KuisController extends Controller
     public function hasilShow(KuisHasil $hasil)
     {
         $hasil->load(['kuis.materi', 'jawaban.pertanyaan', 'pengguna.siswa.level']);
+        $this->authorizeMapelAccess($hasil->kuis?->materi?->mata_pelajaran_id);
         return view('dashboard.kuis.hasil-show', compact('hasil'));
     }
 
     public function hasilUpdate(Request $request, KuisHasil $hasil)
     {
-        $hasil->load(['jawaban.pertanyaan']);
+        $hasil->load(['kuis.materi', 'jawaban.pertanyaan']);
+        $this->authorizeMapelAccess($hasil->kuis?->materi?->mata_pelajaran_id);
 
         $updates = $request->input('koreksi', []);
         foreach ($hasil->jawaban as $jawaban) {
@@ -412,5 +431,21 @@ class KuisController extends Controller
             'materi_id' => $validated['materi_id'] ?? null,
             'materi_bab_id' => null,
         ];
+    }
+
+    private function authorizeKuisAccess(Kuis $kuis): void
+    {
+        $kuis->loadMissing('materi');
+        $this->authorizeKuisMateriId($kuis->materi_id);
+    }
+
+    private function authorizeKuisMateriId(?int $materiId): void
+    {
+        if (!$materiId) {
+            abort(403, 'Kuis ini tidak terhubung ke materi yang dapat Anda kelola.');
+        }
+
+        $materi = Materi::findOrFail($materiId);
+        $this->authorizeMateriAccess($materi);
     }
 }

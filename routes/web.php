@@ -37,7 +37,6 @@ Route::post('/register', [App\Http\Controllers\AuthController::class, 'register'
 
 // Dashboard Routes (Protected)
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index']);
     Route::get('/dashboard-siswa', [App\Http\Controllers\SiswaDashboardController::class, 'index'])
         ->name('dashboard.siswa');
     Route::get('/dashboard-siswa/materi', [App\Http\Controllers\SiswaDashboardController::class, 'materi'])
@@ -84,19 +83,16 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.siswa.rak-buku.add');
     Route::delete('/dashboard-siswa/rak-buku/{materiId}', [App\Http\Controllers\SiswaDashboardController::class, 'removeRakBuku'])
         ->name('dashboard.siswa.rak-buku.remove');
-        
-    Route::resource('dashboard/panduan', PanduanController::class)->names([
-    'index' => 'panduan.index',
-    'create' => 'panduan.create',
-    'store' => 'panduan.store',
-    'show' => 'panduan.show',
-    'edit' => 'panduan.edit',
-    'update' => 'panduan.update',
-    'destroy' => 'panduan.destroy',
-    ]);
-        
 
-    Route::resource('dashboard/materi', App\Http\Controllers\MateriController::class)->names([
+    Route::middleware('staff')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index']);
+
+        Route::get('dashboard/mata-pelajaran', [App\Http\Controllers\MataPelajaranController::class, 'index'])
+            ->name('mata-pelajaran.index');
+        Route::get('dashboard/mata-pelajaran/{mata_pelajaran}', [App\Http\Controllers\MataPelajaranController::class, 'show'])
+            ->name('mata-pelajaran.show');
+
+        Route::resource('dashboard/materi', App\Http\Controllers\MateriController::class)->names([
         'index' => 'materi.index',
         'create' => 'materi.create',
         'store' => 'materi.store',
@@ -122,57 +118,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('dashboard/materi/{materi}/bab/{bab}', [App\Http\Controllers\MateriBabController::class, 'destroy'])
         ->name('materi.bab.destroy');
 
-    Route::resource('dashboard/fiksi', App\Http\Controllers\FiksiController::class)->names([
-        'index' => 'fiksi.index',
-        'create' => 'fiksi.create',
-        'store' => 'fiksi.store',
-        'show' => 'fiksi.show',
-        'edit' => 'fiksi.edit',
-        'update' => 'fiksi.update',
-        'destroy' => 'fiksi.destroy',
-    ]);
-
-    Route::resource('dashboard/aac', App\Http\Controllers\AacController::class)->names([
-        'index' => 'aac.index',
-        'create' => 'aac.create',
-        'store' => 'aac.store',
-        'show' => 'aac.show',
-        'edit' => 'aac.edit',
-        'update' => 'aac.update',
-        'destroy' => 'aac.destroy',
-    ]);
-
-    Route::resource('dashboard/pengguna', App\Http\Controllers\PenggunaController::class)->names([
-        'index' => 'pengguna.index',
-        'create' => 'pengguna.create',
-        'store' => 'pengguna.store',
-        'show' => 'pengguna.show',
-        'edit' => 'pengguna.edit',
-        'update' => 'pengguna.update',
-        'destroy' => 'pengguna.destroy',
-    ]);
-
-    Route::resource('dashboard/level', App\Http\Controllers\LevelController::class)->names([
-        'index' => 'level.index',
-        'create' => 'level.create',
-        'store' => 'level.store',
-        'show' => 'level.show',
-        'edit' => 'level.edit',
-        'update' => 'level.update',
-        'destroy' => 'level.destroy',
-    ]);
-
-    Route::resource('dashboard/mata-pelajaran', App\Http\Controllers\MataPelajaranController::class)->names([
-        'index' => 'mata-pelajaran.index',
-        'create' => 'mata-pelajaran.create',
-        'store' => 'mata-pelajaran.store',
-        'show' => 'mata-pelajaran.show',
-        'edit' => 'mata-pelajaran.edit',
-        'update' => 'mata-pelajaran.update',
-        'destroy' => 'mata-pelajaran.destroy',
-    ]);
-
-    Route::resource('dashboard/kuis', App\Http\Controllers\KuisController::class)->names([
+        Route::resource('dashboard/kuis', App\Http\Controllers\KuisController::class)->names([
         'index' => 'kuis.index',
         'create' => 'kuis.create',
         'store' => 'kuis.store',
@@ -189,28 +135,91 @@ Route::middleware('auth')->group(function () {
         ->name('kuis.hasil.siswa');
     Route::get('dashboard/kuis-hasil/{hasil}', [App\Http\Controllers\KuisController::class, 'hasilShow'])
         ->name('kuis.hasil.show');
-    Route::post('dashboard/kuis-hasil/{hasil}', [App\Http\Controllers\KuisController::class, 'hasilUpdate'])
-        ->name('kuis.hasil.update');
+        Route::post('dashboard/kuis-hasil/{hasil}', [App\Http\Controllers\KuisController::class, 'hasilUpdate'])
+            ->name('kuis.hasil.update');
 
-    Route::resource('dashboard/landing', App\Http\Controllers\LandingItemController::class)->names([
-        'index' => 'landing.index',
-        'create' => 'landing.create',
-        'store' => 'landing.store',
-        'show' => 'landing.show',
-        'edit' => 'landing.edit',
-        'update' => 'landing.update',
-        'destroy' => 'landing.destroy',
-    ]);
+        Route::get('/dashboard/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/dashboard/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/dashboard/profile/upload-foto', [App\Http\Controllers\ProfileController::class, 'uploadFoto'])->name('profile.upload-foto');
+        Route::put('/dashboard/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
-    Route::get('/dashboard/ulasan', [App\Http\Controllers\UlasanController::class, 'index'])
-        ->name('ulasan.index');
-    Route::get('/dashboard/ulasan/export', [App\Http\Controllers\UlasanController::class, 'exportCsv'])
-        ->name('ulasan.export');
-    Route::delete('/dashboard/ulasan/{ulasan}', [App\Http\Controllers\UlasanController::class, 'destroy'])
-        ->name('ulasan.destroy');
+        Route::middleware('admin')->group(function () {
+            Route::resource('dashboard/panduan', PanduanController::class)->names([
+                'index' => 'panduan.index',
+                'create' => 'panduan.create',
+                'store' => 'panduan.store',
+                'show' => 'panduan.show',
+                'edit' => 'panduan.edit',
+                'update' => 'panduan.update',
+                'destroy' => 'panduan.destroy',
+            ]);
 
-    Route::get('/dashboard/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
-    Route::put('/dashboard/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::post('/dashboard/profile/upload-foto', [App\Http\Controllers\ProfileController::class, 'uploadFoto'])->name('profile.upload-foto');
-    Route::put('/dashboard/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password.update');
+            Route::resource('dashboard/fiksi', App\Http\Controllers\FiksiController::class)->names([
+                'index' => 'fiksi.index',
+                'create' => 'fiksi.create',
+                'store' => 'fiksi.store',
+                'show' => 'fiksi.show',
+                'edit' => 'fiksi.edit',
+                'update' => 'fiksi.update',
+                'destroy' => 'fiksi.destroy',
+            ]);
+
+            Route::resource('dashboard/aac', App\Http\Controllers\AacController::class)->names([
+                'index' => 'aac.index',
+                'create' => 'aac.create',
+                'store' => 'aac.store',
+                'show' => 'aac.show',
+                'edit' => 'aac.edit',
+                'update' => 'aac.update',
+                'destroy' => 'aac.destroy',
+            ]);
+
+            Route::resource('dashboard/pengguna', App\Http\Controllers\PenggunaController::class)->names([
+                'index' => 'pengguna.index',
+                'create' => 'pengguna.create',
+                'store' => 'pengguna.store',
+                'show' => 'pengguna.show',
+                'edit' => 'pengguna.edit',
+                'update' => 'pengguna.update',
+                'destroy' => 'pengguna.destroy',
+            ]);
+
+            Route::resource('dashboard/level', App\Http\Controllers\LevelController::class)->names([
+                'index' => 'level.index',
+                'create' => 'level.create',
+                'store' => 'level.store',
+                'show' => 'level.show',
+                'edit' => 'level.edit',
+                'update' => 'level.update',
+                'destroy' => 'level.destroy',
+            ]);
+
+            Route::resource('dashboard/mata-pelajaran', App\Http\Controllers\MataPelajaranController::class)
+                ->except(['index', 'show'])
+                ->names([
+                    'create' => 'mata-pelajaran.create',
+                    'store' => 'mata-pelajaran.store',
+                    'edit' => 'mata-pelajaran.edit',
+                    'update' => 'mata-pelajaran.update',
+                    'destroy' => 'mata-pelajaran.destroy',
+                ]);
+
+            Route::resource('dashboard/landing', App\Http\Controllers\LandingItemController::class)->names([
+                'index' => 'landing.index',
+                'create' => 'landing.create',
+                'store' => 'landing.store',
+                'show' => 'landing.show',
+                'edit' => 'landing.edit',
+                'update' => 'landing.update',
+                'destroy' => 'landing.destroy',
+            ]);
+
+            Route::get('/dashboard/ulasan', [App\Http\Controllers\UlasanController::class, 'index'])
+                ->name('ulasan.index');
+            Route::get('/dashboard/ulasan/export', [App\Http\Controllers\UlasanController::class, 'exportCsv'])
+                ->name('ulasan.export');
+            Route::delete('/dashboard/ulasan/{ulasan}', [App\Http\Controllers\UlasanController::class, 'destroy'])
+                ->name('ulasan.destroy');
+        });
+    });
 });

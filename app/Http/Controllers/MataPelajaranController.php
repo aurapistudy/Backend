@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersByAssignedMapel;
 use Illuminate\Http\Request;
 use App\Models\MataPelajaran;
 
 class MataPelajaranController extends Controller
 {
+    use FiltersByAssignedMapel;
     /**
      * Display a listing of the resource.
      */
@@ -14,7 +16,7 @@ class MataPelajaranController extends Controller
     {
         $search = trim((string) request('search', ''));
 
-        $mataPelajarans = MataPelajaran::query()
+        $mataPelajarans = $this->applyMapelFilterToMataPelajaran(MataPelajaran::query())
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
@@ -65,6 +67,7 @@ class MataPelajaranController extends Controller
     public function show(string $id)
     {
         $mataPelajaran = MataPelajaran::findOrFail($id);
+        $this->authorizeMapelAccess($mataPelajaran->id);
         return view('dashboard.mata-pelajaran.show', compact('mataPelajaran'));
     }
 

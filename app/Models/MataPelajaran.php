@@ -22,4 +22,10 @@ class MataPelajaran extends Model
     {
         return $this->hasMany(Materi::class, 'mata_pelajaran_id');
     }
+
+    public function guruPengguna()
+    {
+        return $this->belongsToMany(Pengguna::class, 'guru_mata_pelajaran', 'mata_pelajaran_id', 'pengguna_id')
+            ->withTimestamps();
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FiltersByAssignedMapel;
 use App\Exceptions\GeminiCoverException;
 use App\Models\Materi;
 use App\Models\MateriBab;
@@ -15,10 +16,13 @@ use Illuminate\Validation\ValidationException;
 
 class MateriBabController extends Controller
 {
+    use FiltersByAssignedMapel;
+
     private const PDF_TARGET_MAX_KB = 10240;
 
     public function create(Materi $materi)
     {
+        $this->authorizeMateriAccess($materi);
         $nextUrutan = ((int) $materi->bab()->max('urutan')) + 1;
 
         return view('dashboard.materi-bab.create', compact('materi', 'nextUrutan'));
@@ -26,6 +30,7 @@ class MateriBabController extends Controller
 
     public function store(Request $request, Materi $materi)
     {
+        $this->authorizeMateriAccess($materi);
         $validated = $this->validateBabPayload($request, true);
         $payload = $this->prepareBabPayload($request, $validated);
         $payload['materi_id'] = $materi->id;
@@ -45,6 +50,7 @@ class MateriBabController extends Controller
 
     public function show(Request $request, Materi $materi, MateriBab $bab)
     {
+        $this->authorizeMateriAccess($materi);
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
         if ($this->isApiRequest($request)) {
@@ -56,6 +62,7 @@ class MateriBabController extends Controller
 
     public function edit(Materi $materi, MateriBab $bab)
     {
+        $this->authorizeMateriAccess($materi);
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
         return view('dashboard.materi-bab.edit', compact('materi', 'bab'));
@@ -63,6 +70,7 @@ class MateriBabController extends Controller
 
     public function update(Request $request, Materi $materi, MateriBab $bab)
     {
+        $this->authorizeMateriAccess($materi);
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
         $validated = $this->validateBabPayload($request, false);
@@ -83,6 +91,7 @@ class MateriBabController extends Controller
 
     public function destroy(Request $request, Materi $materi, MateriBab $bab)
     {
+        $this->authorizeMateriAccess($materi);
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
         $filePath = $bab->file_path;
@@ -116,6 +125,7 @@ class MateriBabController extends Controller
     )
     {
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
+        $this->authorizeMateriAccess($materi);
 
         try {
             $materi->loadMissing(['mataPelajaran', 'level']);
@@ -161,6 +171,7 @@ class MateriBabController extends Controller
 
     public function index(Request $request, Materi $materi)
     {
+        $this->authorizeMateriAccess($materi);
         $bab = $materi->bab()
             ->with('kuis')
             ->withCount('kuis')

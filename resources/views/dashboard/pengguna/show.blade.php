@@ -478,8 +478,14 @@
                                         <span class="meta-badge {{ $pengguna->status_aktif ? 'badge-success' : 'badge-danger' }}">
                                             {{ $pengguna->status_aktif ? 'Aktif' : 'Nonaktif' }}
                                         </span>
-                                        <span class="meta-badge {{ $pengguna->peran === 'guru' ? 'badge-primary' : 'badge-info' }}">
-                                            {{ ucfirst($pengguna->peran) }}
+                                        <span class="meta-badge {{ in_array($pengguna->peran, ['guru', 'admin'], true) ? 'badge-primary' : 'badge-info' }}">
+                                            @if($pengguna->peran === 'admin')
+                                                Administrator
+                                            @elseif($pengguna->peran === 'guru')
+                                                Guru Mapel
+                                            @else
+                                                Siswa
+                                            @endif
                                         </span>
                                     </div>
                                 </div>
@@ -500,7 +506,15 @@
                             <div class="info-icon"><i data-lucide="badge-check"></i></div>
                             <div>
                                 <div class="info-label">Peran</div>
-                                <div class="info-value">{{ ucfirst($pengguna->peran) }}</div>
+                                <div class="info-value">
+                                    @if($pengguna->peran === 'admin')
+                                        Administrator
+                                    @elseif($pengguna->peran === 'guru')
+                                        Guru Mata Pelajaran
+                                    @else
+                                        Siswa
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         <div class="info-card">
@@ -547,13 +561,23 @@
                                 @endif
                             </div>
                         </div>
-                    @elseif($pengguna->peran === 'guru' && $pengguna->guru)
+                    @elseif($pengguna->peran === 'guru')
                         <div class="content-section">
-                            <h3 class="section-title">Informasi Guru</h3>
+                            <h3 class="section-title">Informasi Guru Mapel</h3>
                             <div class="info-grid">
                                 <div class="info-card">
                                     <div class="info-label">Nama Sekolah</div>
                                     <div class="info-value">{{ $pengguna->guru->nama_sekolah ?? '-' }}</div>
+                                </div>
+                                <div class="info-card" style="grid-column: 1 / -1;">
+                                    <div class="info-label">Mata Pelajaran</div>
+                                    <div class="info-value">
+                                        @if($pengguna->mataPelajaranAsGuru->isNotEmpty())
+                                            {{ $pengguna->mataPelajaranAsGuru->pluck('nama')->join(', ') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>

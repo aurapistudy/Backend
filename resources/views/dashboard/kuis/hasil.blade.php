@@ -106,7 +106,7 @@
                                 <th>Siswa</th>
                                 <th>Level</th>
                                 <th>Total Pengerjaan</th>
-                                <th>Kuis Unik</th>
+                                <th>Kuis Berbeda</th>
                                 <th>Perlu Koreksi</th>
                                 <th>Terakhir Mengerjakan</th>
                                 <th>Rata-rata Skor</th>

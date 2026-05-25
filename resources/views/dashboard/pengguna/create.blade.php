@@ -470,7 +470,8 @@
                         <select name="peran" id="peran" class="form-select" required>
                             <option value="">Pilih Peran</option>
                             <option value="siswa" {{ old('peran') == 'siswa' ? 'selected' : '' }}>Siswa</option>
-                            <option value="guru" {{ old('peran') == 'guru' ? 'selected' : '' }}>Guru</option>
+                            <option value="guru" {{ old('peran') == 'guru' ? 'selected' : '' }}>Guru Mata Pelajaran</option>
+                            <option value="admin" {{ old('peran') == 'admin' ? 'selected' : '' }}>Administrator</option>
                         </select>
                         @error('peran')
                             <span class="error-message">{{ $message }}</span>
@@ -483,6 +484,26 @@
                         @error('nama_sekolah')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
+                    </div>
+
+                    <div id="guru_mapel_fields" style="display: {{ old('peran') == 'guru' ? 'block' : 'none' }}; margin-top: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Mata Pelajaran yang Dikelola <span class="required">*</span></label>
+                            <div style="display: grid; gap: 0.5rem; max-height: 220px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 10px; padding: 0.75rem;">
+                                @forelse($mataPelajarans as $mapel)
+                                    <label class="form-checkbox" style="justify-content: flex-start;">
+                                        <input type="checkbox" name="mata_pelajaran_ids[]" value="{{ $mapel->id }}"
+                                            {{ in_array($mapel->id, old('mata_pelajaran_ids', [])) ? 'checked' : '' }}>
+                                        <span>{{ $mapel->nama }}</span>
+                                    </label>
+                                @empty
+                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif. Tambahkan dulu di menu administrator.</span>
+                                @endforelse
+                            </div>
+                            @error('mata_pelajaran_ids')
+                                <span class="error-message">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
 
                     <div id="siswa_fields" style="display: {{ old('peran') == 'siswa' ? 'block' : 'none' }};">
@@ -530,12 +551,10 @@
         document.getElementById('peran').addEventListener('change', function() {
             const peran = this.value;
             const siswaFields = document.getElementById('siswa_fields');
-            
-            if (peran === 'siswa') {
-                siswaFields.style.display = 'block';
-            } else {
-                siswaFields.style.display = 'none';
-            }
+            const guruMapelFields = document.getElementById('guru_mapel_fields');
+
+            siswaFields.style.display = peran === 'siswa' ? 'block' : 'none';
+            guruMapelFields.style.display = peran === 'guru' ? 'block' : 'none';
         });
 
         // Trigger on page load if value exists
