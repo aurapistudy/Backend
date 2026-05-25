@@ -29,6 +29,18 @@ class KuisHasil extends Model
         return $this->belongsTo(Kuis::class, 'kuis_id');
     }
 
+    public function pengguna()
+    {
+        return $this->belongsTo(Pengguna::class, 'pengguna_id');
+    }
+
+    public function scopeWithPendingFlag($query)
+    {
+        return $query->withExists(['jawaban as has_pending' => function ($inner) {
+            $inner->where('status_koreksi', 'pending');
+        }]);
+    }
+
     public function jawaban()
     {
         return $this->hasMany(KuisJawaban::class, 'kuis_hasil_id');

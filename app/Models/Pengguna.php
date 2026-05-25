@@ -63,4 +63,9 @@ class Pengguna extends Authenticatable
     {
         return $this->hasOne(Guru::class, 'pengguna_id');
     }
+
+    public function kuisHasil()
+    {
+        return $this->hasMany(KuisHasil::class, 'pengguna_id');
+    }
 }

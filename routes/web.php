@@ -185,6 +185,8 @@ Route::middleware('auth')->group(function () {
         ->name('kuis.generate-from-materi');
     Route::get('dashboard/kuis-hasil', [App\Http\Controllers\KuisController::class, 'hasilIndex'])
         ->name('kuis.hasil.index');
+    Route::get('dashboard/kuis-hasil/siswa/{pengguna}', [App\Http\Controllers\KuisController::class, 'hasilSiswa'])
+        ->name('kuis.hasil.siswa');
     Route::get('dashboard/kuis-hasil/{hasil}', [App\Http\Controllers\KuisController::class, 'hasilShow'])
         ->name('kuis.hasil.show');
     Route::post('dashboard/kuis-hasil/{hasil}', [App\Http\Controllers\KuisController::class, 'hasilUpdate'])

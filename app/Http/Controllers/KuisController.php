@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\GeminiCoverException;
 use App\Models\Kuis;
 use App\Models\KuisHasil;
+use App\Models\Pengguna;
 use App\Models\KuisJawaban;
 use App\Models\KuisPertanyaan;
 use App\Models\KuisOpsi;
@@ -174,8 +175,44 @@ class KuisController extends Controller
     {
         $search = trim((string) $request->get('search', ''));
 
+        $siswa = Pengguna::query()
+            ->where('peran', 'siswa')
+            ->whereHas('kuisHasil')
+            ->with(['siswa.level'])
+            ->withCount('kuisHasil as total_hasil')
+            ->withCount(['kuisHasil as perlu_koreksi_count' => function ($query) {
+                $query->whereHas('jawaban', function ($jawabanQuery) {
+                    $jawabanQuery->where('status_koreksi', 'pending');
+                });
+            }])
+            ->withMax('kuisHasil as terakhir_selesai', 'selesai_at')
+            ->withAvg('kuisHasil as rata_skor', 'skor')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('nama', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('siswa.level', function ($levelQuery) use ($search) {
+                            $levelQuery->where('nama', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderByDesc('terakhir_selesai')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('dashboard.kuis.hasil', compact('siswa', 'search'));
+    }
+
+    public function hasilSiswa(Request $request, Pengguna $pengguna)
+    {
+        abort_unless($pengguna->peran === 'siswa', 404);
+
+        $search = trim((string) $request->get('search', ''));
+
         $hasil = KuisHasil::query()
-            ->with(['kuis.materi', 'jawaban.pertanyaan'])
+            ->with(['kuis.materi'])
+            ->withPendingFlag()
+            ->where('pengguna_id', $pengguna->id)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
@@ -194,12 +231,14 @@ class KuisController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('dashboard.kuis.hasil', compact('hasil', 'search'));
+        $pengguna->load('siswa.level');
+
+        return view('dashboard.kuis.hasil-siswa', compact('pengguna', 'hasil', 'search'));
     }
 
     public function hasilShow(KuisHasil $hasil)
     {
-        $hasil->load(['kuis.materi', 'jawaban.pertanyaan']);
+        $hasil->load(['kuis.materi', 'jawaban.pertanyaan', 'pengguna.siswa.level']);
         return view('dashboard.kuis.hasil-show', compact('hasil'));
     }
 

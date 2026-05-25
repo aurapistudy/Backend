@@ -62,6 +62,9 @@
         .koreksi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
         .koreksi-row textarea { width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid var(--color-gray); }
         .form-group { margin-top: 0.5rem; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--color-text-light); flex-wrap: wrap; }
+        .breadcrumb a { color: #166534; text-decoration: none; font-weight: 600; }
+        .breadcrumb a:hover { text-decoration: underline; }
         @media (max-width: 900px) {
             .koreksi-row { grid-template-columns: 1fr; }
         }
@@ -88,6 +91,16 @@
                 <h1 class="header-title">Koreksi Kuis</h1>
             </header>
             <div class="content-area">
+                <nav class="breadcrumb" aria-label="Navigasi">
+                    <a href="{{ route('kuis.hasil.index') }}">Hasil Kuis</a>
+                    @if($hasil->pengguna)
+                        <span>/</span>
+                        <a href="{{ route('kuis.hasil.siswa', $hasil->pengguna_id) }}">{{ $hasil->pengguna->nama }}</a>
+                    @endif
+                    <span>/</span>
+                    <span>Koreksi</span>
+                </nav>
+
                 @if(session('success'))
                     <div class="card">
                         <span class="tag">Sukses</span>
@@ -98,6 +111,10 @@
                 <div class="card">
                     <span class="tag">Ringkasan</span>
                     <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Siswa</div>
+                            <div class="info-value">{{ $hasil->pengguna->nama ?? '-' }}</div>
+                        </div>
                         <div class="info-item">
                             <div class="info-label">Kuis</div>
                             <div class="info-value">{{ $hasil->kuis->judul ?? '-' }}</div>
@@ -175,7 +192,11 @@
                             <i data-lucide="save"></i>
                             Simpan Koreksi
                         </button>
-                        <a class="btn btn-secondary" href="{{ route('kuis.hasil.index') }}">Kembali</a>
+                        @if($hasil->pengguna_id)
+                            <a class="btn btn-secondary" href="{{ route('kuis.hasil.siswa', $hasil->pengguna_id) }}">Kembali ke Hasil Siswa</a>
+                        @else
+                            <a class="btn btn-secondary" href="{{ route('kuis.hasil.index') }}">Kembali</a>
+                        @endif
                     </div>
                 </form>
             </div>
