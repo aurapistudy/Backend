@@ -9,37 +9,36 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Bersihkan tabel sisa deploy gagal (biasanya masih kosong).
         Schema::dropIfExists('guru_mata_pelajaran');
 
         Schema::create('guru_mata_pelajaran', function (Blueprint $table) {
             $table->id();
-            // Sesuaikan tipe id parent: pengguna = bigint signed, mata_pelajaran = bigint unsigned.
-            $table->bigInteger('pengguna_id');
+            // Tanpa foreign key agar kompatibel lokal (bigint signed) dan Railway (bigint unsigned).
+            $table->unsignedBigInteger('pengguna_id');
             $table->unsignedBigInteger('mata_pelajaran_id');
             $table->timestamps();
 
             $table->unique(['pengguna_id', 'mata_pelajaran_id']);
-            $table->foreign('pengguna_id')
-                ->references('id')
-                ->on('pengguna')
-                ->cascadeOnDelete();
-            $table->foreign('mata_pelajaran_id')
-                ->references('id')
-                ->on('mata_pelajaran')
-                ->cascadeOnDelete();
+            $table->index('pengguna_id');
+            $table->index('mata_pelajaran_id');
         });
 
-        DB::table('pengguna')
-            ->where('email', 'superadmin@ruma.com')
-            ->update(['peran' => 'admin']);
+        if (Schema::hasTable('pengguna')) {
+            DB::table('pengguna')
+                ->where('email', 'superadmin@ruma.com')
+                ->update(['peran' => 'admin']);
+        }
     }
 
     public function down(): void
     {
         Schema::dropIfExists('guru_mata_pelajaran');
 
-        DB::table('pengguna')
-            ->where('email', 'superadmin@ruma.com')
-            ->update(['peran' => 'guru']);
+        if (Schema::hasTable('pengguna')) {
+            DB::table('pengguna')
+                ->where('email', 'superadmin@ruma.com')
+                ->update(['peran' => 'guru']);
+        }
     }
 };
