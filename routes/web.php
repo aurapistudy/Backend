@@ -143,6 +143,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/dashboard/profile/upload-foto', [App\Http\Controllers\ProfileController::class, 'uploadFoto'])->name('profile.upload-foto');
         Route::put('/dashboard/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
+        // AAC bisa diakses juga oleh guru mapel (staff), bukan hanya admin.
+        Route::resource('dashboard/aac', App\Http\Controllers\AacController::class)->names([
+            'index' => 'aac.index',
+            'create' => 'aac.create',
+            'store' => 'aac.store',
+            'show' => 'aac.show',
+            'edit' => 'aac.edit',
+            'update' => 'aac.update',
+            'destroy' => 'aac.destroy',
+        ]);
+
         Route::middleware('admin')->group(function () {
             Route::resource('dashboard/panduan', PanduanController::class)->names([
                 'index' => 'panduan.index',
@@ -162,16 +173,6 @@ Route::middleware('auth')->group(function () {
                 'edit' => 'fiksi.edit',
                 'update' => 'fiksi.update',
                 'destroy' => 'fiksi.destroy',
-            ]);
-
-            Route::resource('dashboard/aac', App\Http\Controllers\AacController::class)->names([
-                'index' => 'aac.index',
-                'create' => 'aac.create',
-                'store' => 'aac.store',
-                'show' => 'aac.show',
-                'edit' => 'aac.edit',
-                'update' => 'aac.update',
-                'destroy' => 'aac.destroy',
             ]);
 
             Route::resource('dashboard/pengguna', App\Http\Controllers\PenggunaController::class)->names([

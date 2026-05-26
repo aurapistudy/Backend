@@ -241,7 +241,9 @@
             <span>Fiksi</span>
         </a>
     </div>
+    @endif
 
+    @if(auth()->user()?->isStaff())
     <div class="nav-item" data-route="aac">
         <a href="{{ route('aac.index', [], false) }}" data-testid="nav-aac" aria-label="AAC">
             <span class="nav-icon">
@@ -250,7 +252,9 @@
             <span>AAC</span>
         </a>
     </div>
+    @endif
 
+    @if(auth()->user()?->isAdmin())
     <div class="nav-item" data-route="pengguna">
         <a href="{{ route('pengguna.index', [], false) }}" data-testid="nav-pengguna" aria-label="Pengguna">
             <span class="nav-icon">

@@ -74,9 +74,11 @@ class MateriController extends Controller
     public function create()
     {
         $levels = Level::where('status_aktif', true)->orderBy('nama')->get();
-        $mataPelajarans = $this->applyMapelFilterToMataPelajaran(
-            MataPelajaran::where('status_aktif', true)
-        )->orderBy('nama')->get();
+        // Untuk guru mapel baru yang belum punya assignment, form create tetap perlu menampilkan pilihan kategori.
+        // Pembatasan akses dilakukan pada list/show/edit via assignment materi.
+        $mataPelajarans = MataPelajaran::where('status_aktif', true)
+            ->orderBy('nama')
+            ->get();
         return view('dashboard.materi.create', compact('levels', 'mataPelajarans'));
     }
 
@@ -132,9 +134,13 @@ class MateriController extends Controller
 
         $this->validateBabEntries($request);
 
-        $this->authorizeMapelAccess(
-            !empty($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null
-        );
+        // Guru mapel boleh membuat materi baru; setelah dibuat akan otomatis di-assign ke guru tsb.
+        // Admin tetap bisa membuat materi di kategori mana pun.
+        if (Auth::user()?->isAdmin()) {
+            $this->authorizeMapelAccess(
+                !empty($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null
+            );
+        }
 
         $firstBabPayload = [
             'judul_bab' => trim((string) $validated['judul_bab_pertama']),
@@ -178,6 +184,13 @@ class MateriController extends Controller
 
         DB::transaction(function () use ($validated, $request, $firstBabPayload) {
             $materi = Materi::create($validated);
+
+            // Auto-assign materi yang dibuat ke guru mapel pembuatnya.
+            $user = Auth::user();
+            if ($user && $user->isGuruMapel()) {
+                $user->materiAsGuru()->syncWithoutDetaching([$materi->id]);
+            }
+
             MateriBab::create(array_merge($firstBabPayload, [
                 'materi_id' => $materi->id,
             ]));
@@ -284,9 +297,9 @@ class MateriController extends Controller
         $materi = Materi::with('bab')->findOrFail($id);
         $this->authorizeMateriAccess($materi);
         $levels = Level::where('status_aktif', true)->orderBy('nama')->get();
-        $mataPelajarans = $this->applyMapelFilterToMataPelajaran(
-            MataPelajaran::where('status_aktif', true)
-        )->orderBy('nama')->get();
+        $mataPelajarans = MataPelajaran::where('status_aktif', true)
+            ->orderBy('nama')
+            ->get();
         return view('dashboard.materi.edit', compact('materi', 'levels', 'mataPelajarans'));
     }
 
@@ -339,9 +352,11 @@ class MateriController extends Controller
         $validated['jumlah_halaman'] = null;
         $validated['status_aktif'] = $request->has('status_aktif') ? true : false;
 
-        $this->authorizeMapelAccess(
-            isset($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null
-        );
+        if (Auth::user()?->isAdmin()) {
+            $this->authorizeMapelAccess(
+                isset($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null
+            );
+        }
 
         $materi->update($validated);
 

@@ -194,17 +194,25 @@ class KuisController extends Controller
                 $this->applyMapelFilterToKuisHasil($hasilQuery);
             })
             ->with(['siswa.level'])
-            ->withCount('kuisHasil as total_hasil')
+            ->withCount(['kuisHasil as total_hasil' => function ($query) {
+                $this->applyMapelFilterToKuisHasil($query);
+            }])
             ->withCount(['kuisHasil as kuis_unik_count' => function ($query) {
+                $this->applyMapelFilterToKuisHasil($query);
                 $query->select(DB::raw('count(distinct kuis_id)'));
             }])
             ->withCount(['kuisHasil as perlu_koreksi_count' => function ($query) {
                 $query->whereHas('jawaban', function ($jawabanQuery) {
                     $jawabanQuery->where('status_koreksi', 'pending');
                 });
+                $this->applyMapelFilterToKuisHasil($query);
             }])
-            ->withMax('kuisHasil as terakhir_selesai', 'selesai_at')
-            ->withAvg('kuisHasil as rata_skor', 'skor')
+            ->withMax(['kuisHasil as terakhir_selesai' => function ($query) {
+                $this->applyMapelFilterToKuisHasil($query);
+            }], 'selesai_at')
+            ->withAvg(['kuisHasil as rata_skor' => function ($query) {
+                $this->applyMapelFilterToKuisHasil($query);
+            }], 'skor')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('nama', 'like', "%{$search}%")
@@ -253,7 +261,9 @@ class KuisController extends Controller
 
         $pengguna->load('siswa.level');
 
-        $hasilQuery = KuisHasil::query()->where('pengguna_id', $pengguna->id);
+        $hasilQuery = $this->applyMapelFilterToKuisHasil(
+            KuisHasil::query()->where('pengguna_id', $pengguna->id)
+        );
         $ringkasan = [
             'total_hasil' => (clone $hasilQuery)->count(),
             'kuis_unik' => (clone $hasilQuery)->distinct()->count('kuis_id'),
