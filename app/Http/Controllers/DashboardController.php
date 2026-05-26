@@ -22,15 +22,16 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        $mapelScope = null;
+        $materiScope = null;
         if ($user && $user->isGuruMapel()) {
-            $mapelScope = $user->assignedMataPelajaranIds();
+            // Guru mapel dibatasi oleh materi yang dikelola (bukan mata_pelajaran kategori).
+            $materiScope = $user->assignedMateriIds();
         }
 
         // Hitung statistik
         $materiQuery = Materi::where('status_aktif', true);
-        if ($mapelScope !== null) {
-            $materiQuery->whereIn('mata_pelajaran_id', $mapelScope ?: [-1]);
+        if ($materiScope !== null) {
+            $materiQuery->whereIn('id', $materiScope ?: [-1]);
         }
         $totalMateri = $materiQuery->count();
         $totalPenggunaAktif = Pengguna::where('status_aktif', true)->count();
