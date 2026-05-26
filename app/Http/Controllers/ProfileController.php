@@ -17,7 +17,7 @@ class ProfileController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $user->load(['siswa', 'guru']);
+        $user->load(['siswa', 'guru', 'materiAsGuru']);
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json(['user' => $user]);
         }

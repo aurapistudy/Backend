@@ -588,6 +588,18 @@
                                 <div class="detail-value">{{ $user->guru->nama_sekolah ?? '-' }}</div>
                             </div>
                             @endif
+                            @if($user->peran === 'guru')
+                            <div class="detail-card" style="grid-column: 1 / -1;">
+                                <div class="detail-label">Mapel yang Ditugaskan</div>
+                                <div class="detail-value">
+                                    @if($user->materiAsGuru?->isNotEmpty())
+                                        {{ $user->materiAsGuru->pluck('judul')->join(', ') }}
+                                    @else
+                                        -
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                     
