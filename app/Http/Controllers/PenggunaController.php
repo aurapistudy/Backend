@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MataPelajaran;
+use App\Models\Materi;
 use App\Models\Pengguna;
 use App\Models\Siswa;
 use App\Models\Guru;
@@ -17,7 +17,7 @@ class PenggunaController extends Controller
         $search = trim((string) $request->get('search', ''));
 
         $pengguna = Pengguna::query()
-            ->with(['siswa', 'guru', 'mataPelajaranAsGuru'])
+            ->with(['siswa', 'guru', 'materiAsGuru'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
@@ -35,9 +35,12 @@ class PenggunaController extends Controller
 
     public function create()
     {
-        $mataPelajarans = MataPelajaran::where('status_aktif', true)->orderBy('nama')->get();
+        $materiList = Materi::query()
+            ->where('status_aktif', true)
+            ->orderBy('judul')
+            ->get(['id', 'judul']);
 
-        return view('dashboard.pengguna.create', compact('mataPelajarans'));
+        return view('dashboard.pengguna.create', compact('materiList'));
     }
 
     public function store(Request $request)
@@ -60,23 +63,26 @@ class PenggunaController extends Controller
 
     public function show(string $id)
     {
-        $pengguna = Pengguna::with(['siswa', 'guru', 'mataPelajaranAsGuru'])->findOrFail($id);
+        $pengguna = Pengguna::with(['siswa', 'guru', 'materiAsGuru'])->findOrFail($id);
 
         return view('dashboard.pengguna.show', compact('pengguna'));
     }
 
     public function edit(string $id)
     {
-        $pengguna = Pengguna::with(['siswa', 'guru', 'mataPelajaranAsGuru'])->findOrFail($id);
-        $mataPelajarans = MataPelajaran::where('status_aktif', true)->orderBy('nama')->get();
-        $assignedMapelIds = $pengguna->mataPelajaranAsGuru->pluck('id')->all();
+        $pengguna = Pengguna::with(['siswa', 'guru', 'materiAsGuru'])->findOrFail($id);
+        $materiList = Materi::query()
+            ->where('status_aktif', true)
+            ->orderBy('judul')
+            ->get(['id', 'judul']);
+        $assignedMateriIds = $pengguna->materiAsGuru->pluck('id')->all();
 
-        return view('dashboard.pengguna.edit', compact('pengguna', 'mataPelajarans', 'assignedMapelIds'));
+        return view('dashboard.pengguna.edit', compact('pengguna', 'materiList', 'assignedMateriIds'));
     }
 
     public function update(Request $request, string $id)
     {
-        $pengguna = Pengguna::with(['siswa', 'guru', 'mataPelajaranAsGuru'])->findOrFail($id);
+        $pengguna = Pengguna::with(['siswa', 'guru', 'materiAsGuru'])->findOrFail($id);
 
         $validated = $this->validatePenggunaPayload($request, $pengguna->id, false);
 
@@ -108,7 +114,9 @@ class PenggunaController extends Controller
         if ($pengguna->guru) {
             $pengguna->guru->delete();
         }
+        $pengguna->materiAsGuru()->detach();
         $pengguna->mataPelajaranAsGuru()->detach();
+
         $pengguna->delete();
 
         return redirect()->route('pengguna.index')
@@ -133,8 +141,8 @@ class PenggunaController extends Controller
             'nama_sekolah' => 'nullable|string|max:150',
             'jenjang' => 'nullable|string|max:50',
             'catatan' => 'nullable|string',
-            'mata_pelajaran_ids' => 'required_if:peran,guru|array|min:1',
-            'mata_pelajaran_ids.*' => 'integer|exists:mata_pelajaran,id',
+            'materi_ids' => 'required_if:peran,guru|array|min:1',
+            'materi_ids.*' => 'integer|exists:materi,id',
         ], [
             'nama.required' => 'Nama wajib diisi',
             'email.required' => 'Email wajib diisi',
@@ -144,8 +152,8 @@ class PenggunaController extends Controller
             'kata_sandi.min' => 'Kata sandi minimal 6 karakter',
             'peran.required' => 'Peran wajib dipilih',
             'peran.in' => 'Peran harus siswa, guru mapel, atau administrator',
-            'mata_pelajaran_ids.required_if' => 'Pilih minimal satu mata pelajaran untuk guru mapel.',
-            'mata_pelajaran_ids.min' => 'Pilih minimal satu mata pelajaran untuk guru mapel.',
+            'materi_ids.required_if' => 'Pilih minimal satu mata pelajaran (dari daftar Materi) untuk guru mapel.',
+            'materi_ids.min' => 'Pilih minimal satu mata pelajaran untuk guru mapel.',
         ]);
     }
 
@@ -155,6 +163,7 @@ class PenggunaController extends Controller
             if ($pengguna->guru) {
                 $pengguna->guru->delete();
             }
+            $pengguna->materiAsGuru()->detach();
             $pengguna->mataPelajaranAsGuru()->detach();
 
             if ($pengguna->siswa) {
@@ -191,8 +200,9 @@ class PenggunaController extends Controller
                 ]);
             }
 
-            $mapelIds = array_map('intval', $request->input('mata_pelajaran_ids', []));
-            $pengguna->syncMataPelajaranAsGuru($mapelIds);
+            $materiIds = array_map('intval', $request->input('materi_ids', []));
+            $pengguna->syncMateriAsGuru($materiIds);
+            $pengguna->mataPelajaranAsGuru()->detach();
 
             return;
         }
@@ -200,6 +210,7 @@ class PenggunaController extends Controller
         if ($pengguna->guru) {
             $pengguna->guru->delete();
         }
+        $pengguna->materiAsGuru()->detach();
         $pengguna->mataPelajaranAsGuru()->detach();
     }
 }

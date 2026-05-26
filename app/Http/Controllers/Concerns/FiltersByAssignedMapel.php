@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Auth;
 trait FiltersByAssignedMapel
 {
     /**
-     * @return array<int>|null null = semua mapel (admin)
+     * ID materi yang boleh diakses guru mapel. null = semua (admin).
+     *
+     * @return array<int>|null
      */
-    protected function staffMapelIds(): ?array
+    protected function staffMateriIds(): ?array
     {
         $user = Auth::user();
 
@@ -20,7 +22,7 @@ trait FiltersByAssignedMapel
         }
 
         if ($user->isGuruMapel()) {
-            return $user->assignedMataPelajaranIds();
+            return $user->assignedMateriIds();
         }
 
         return [];
@@ -28,39 +30,7 @@ trait FiltersByAssignedMapel
 
     protected function applyMapelFilterToMateri(Builder $query): Builder
     {
-        $ids = $this->staffMapelIds();
-
-        if ($ids === null) {
-            return $query;
-        }
-
-        if ($ids === []) {
-            return $query->whereRaw('0 = 1');
-        }
-
-        return $query->whereIn('mata_pelajaran_id', $ids);
-    }
-
-    protected function applyMapelFilterToKuis(Builder $query): Builder
-    {
-        $ids = $this->staffMapelIds();
-
-        if ($ids === null) {
-            return $query;
-        }
-
-        if ($ids === []) {
-            return $query->whereRaw('0 = 1');
-        }
-
-        return $query->whereHas('materi', function (Builder $materiQuery) use ($ids) {
-            $materiQuery->whereIn('mata_pelajaran_id', $ids);
-        });
-    }
-
-    protected function applyMapelFilterToMataPelajaran(Builder $query): Builder
-    {
-        $ids = $this->staffMapelIds();
+        $ids = $this->staffMateriIds();
 
         if ($ids === null) {
             return $query;
@@ -73,9 +43,60 @@ trait FiltersByAssignedMapel
         return $query->whereIn('id', $ids);
     }
 
+    protected function applyMapelFilterToKuis(Builder $query): Builder
+    {
+        $ids = $this->staffMateriIds();
+
+        if ($ids === null) {
+            return $query;
+        }
+
+        if ($ids === []) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereIn('materi_id', $ids);
+    }
+
+    protected function applyMapelFilterToMataPelajaran(Builder $query): Builder
+    {
+        $materiIds = $this->staffMateriIds();
+
+        if ($materiIds === null) {
+            return $query;
+        }
+
+        if ($materiIds === []) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        $mapelIds = Materi::query()
+            ->whereIn('id', $materiIds)
+            ->whereNotNull('mata_pelajaran_id')
+            ->pluck('mata_pelajaran_id')
+            ->unique()
+            ->all();
+
+        if ($mapelIds === []) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereIn('id', $mapelIds);
+    }
+
     protected function authorizeMateriAccess(Materi $materi): void
     {
-        $this->authorizeMapelAccess($materi->mata_pelajaran_id);
+        $user = Auth::user();
+
+        if (!$user || !$user->isStaff()) {
+            abort(403);
+        }
+
+        if ($user->isAdmin() || $user->canAccessMateri($materi->id)) {
+            return;
+        }
+
+        abort(403, 'Anda tidak memiliki akses ke mata pelajaran ini.');
     }
 
     protected function authorizeMapelAccess(?int $mataPelajaranId): void
@@ -90,7 +111,16 @@ trait FiltersByAssignedMapel
             return;
         }
 
-        if ($mataPelajaranId && $user->canAccessMataPelajaran($mataPelajaranId)) {
+        if (!$mataPelajaranId) {
+            abort(403, 'Anda tidak memiliki akses ke mata pelajaran ini.');
+        }
+
+        $allowed = Materi::query()
+            ->whereIn('id', $user->assignedMateriIds())
+            ->where('mata_pelajaran_id', $mataPelajaranId)
+            ->exists();
+
+        if ($allowed) {
             return;
         }
 
@@ -99,7 +129,7 @@ trait FiltersByAssignedMapel
 
     protected function applyMapelFilterToKuisHasil(Builder $query): Builder
     {
-        $ids = $this->staffMapelIds();
+        $ids = $this->staffMateriIds();
 
         if ($ids === null) {
             return $query;
@@ -110,9 +140,7 @@ trait FiltersByAssignedMapel
         }
 
         return $query->whereHas('kuis', function (Builder $kuisQuery) use ($ids) {
-            $kuisQuery->whereHas('materi', function (Builder $materiQuery) use ($ids) {
-                $materiQuery->whereIn('mata_pelajaran_id', $ids);
-            });
+            $kuisQuery->whereIn('materi_id', $ids);
         });
     }
 }

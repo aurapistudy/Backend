@@ -516,21 +516,22 @@
                     <div id="guru_mapel_fields" style="display: {{ old('peran', $pengguna->peran) == 'guru' ? 'block' : 'none' }}; margin-top: 1rem;">
                         <div class="form-group">
                             <label class="form-label">Mata Pelajaran yang Dikelola <span class="required">*</span></label>
+                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Daftar ini sama dengan item di menu <strong>Mata Pelajaran</strong>.</p>
                             <div style="display: grid; gap: 0.5rem; max-height: 220px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 10px; padding: 0.75rem;">
                                 @php
-                                    $selectedMapel = old('mata_pelajaran_ids', $assignedMapelIds ?? []);
+                                    $selectedMateri = old('materi_ids', $assignedMateriIds ?? []);
                                 @endphp
-                                @forelse($mataPelajarans as $mapel)
+                                @forelse($materiList as $materi)
                                     <label class="form-checkbox" style="justify-content: flex-start;">
-                                        <input type="checkbox" name="mata_pelajaran_ids[]" value="{{ $mapel->id }}"
-                                            {{ in_array($mapel->id, $selectedMapel) ? 'checked' : '' }}>
-                                        <span>{{ $mapel->nama }}</span>
+                                        <input type="checkbox" name="materi_ids[]" value="{{ $materi->id }}"
+                                            {{ in_array($materi->id, $selectedMateri) ? 'checked' : '' }}>
+                                        <span>{{ $materi->judul }}</span>
                                     </label>
                                 @empty
                                     <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif.</span>
                                 @endforelse
                             </div>
-                            @error('mata_pelajaran_ids')
+                            @error('materi_ids')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
                         </div>

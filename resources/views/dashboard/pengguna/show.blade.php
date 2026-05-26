@@ -570,10 +570,10 @@
                                     <div class="info-value">{{ $pengguna->guru->nama_sekolah ?? '-' }}</div>
                                 </div>
                                 <div class="info-card" style="grid-column: 1 / -1;">
-                                    <div class="info-label">Mata Pelajaran</div>
+                                    <div class="info-label">Mata Pelajaran yang Dikelola</div>
                                     <div class="info-value">
-                                        @if($pengguna->mataPelajaranAsGuru->isNotEmpty())
-                                            {{ $pengguna->mataPelajaranAsGuru->pluck('nama')->join(', ') }}
+                                        @if($pengguna->materiAsGuru->isNotEmpty())
+                                            {{ $pengguna->materiAsGuru->pluck('judul')->join(', ') }}
                                         @else
                                             -
                                         @endif

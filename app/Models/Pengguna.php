@@ -75,6 +75,13 @@ class Pengguna extends Authenticatable
             ->withTimestamps();
     }
 
+    /** Materi yang dikelola guru (sesuai daftar di menu Mata Pelajaran). */
+    public function materiAsGuru()
+    {
+        return $this->belongsToMany(Materi::class, 'guru_materi', 'pengguna_id', 'materi_id')
+            ->withTimestamps();
+    }
+
     public function isAdmin(): bool
     {
         return $this->peran === 'admin';
@@ -93,33 +100,33 @@ class Pengguna extends Authenticatable
     /**
      * @return array<int>
      */
-    public function assignedMataPelajaranIds(): array
+    public function assignedMateriIds(): array
     {
         if (!$this->isGuruMapel()) {
             return [];
         }
 
-        return $this->mataPelajaranAsGuru()
-            ->pluck('mata_pelajaran_id')
+        return $this->materiAsGuru()
+            ->pluck('materi.id')
             ->map(fn ($id) => (int) $id)
             ->all();
     }
 
-    public function canAccessMataPelajaran(?int $mataPelajaranId): bool
+    public function canAccessMateri(?int $materiId): bool
     {
         if ($this->isAdmin()) {
             return true;
         }
 
-        if (!$mataPelajaranId) {
+        if (!$materiId) {
             return false;
         }
 
-        return in_array($mataPelajaranId, $this->assignedMataPelajaranIds(), true);
+        return in_array($materiId, $this->assignedMateriIds(), true);
     }
 
-    public function syncMataPelajaranAsGuru(array $mataPelajaranIds): void
+    public function syncMateriAsGuru(array $materiIds): void
     {
-        $this->mataPelajaranAsGuru()->sync($mataPelajaranIds);
+        $this->materiAsGuru()->sync($materiIds);
     }
 }
