@@ -138,7 +138,7 @@
             padding: 3rem 1rem;
             color: var(--color-text-light);
         }
-    </style>
+        </style>
 </head>
 <body>
     <div class="dashboard-container">

@@ -8,176 +8,8 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
+    @include('components.dashboard-shell-styles')
     <style>
-        :root {
-    --color-primary: #1F2937;
-    --color-primary-dark: #111827;
-    --color-primary-light: #F9FAFB;
-    --color-accent: #F8B803;
-    --color-white: #FFFFFF;
-    --color-gray-light: #F3F4F6;
-    --color-gray: #E5E7EB;
-    --color-text: #111827;
-    --color-text-light: #6B7280;
-    --sidebar-width: 280px;
-}
-
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--color-gray-light);
-            color: var(--color-text);
-            overflow-x: hidden;
-        }
-        
-        .dashboard-container {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        /* Sidebar */
-       .sidebar {
-    width: var(--sidebar-width);
-    background: linear-gradient(180deg, #1F2937 0%, #111827 100%);
-    position: fixed;
-    height: 100vh;
-    left: 0;
-    top: 0;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-}
-
-        
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .logo-circle {
-            width: 50px;
-            height: 50px;
-            background: var(--color-white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .logo-icon {
-            width: 26px;
-            height: 26px;
-            color: var(--color-accent);
-        }
-        
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--color-white);
-            letter-spacing: 1px;
-        }
-        
-        .sidebar-nav {
-            flex: 1;
-            padding: 1.5rem 0;
-            overflow-y: auto;
-        }
-        
-        .nav-item {
-            margin: 0.5rem 1rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-item a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            color: var(--color-white);
-            text-decoration: none;
-            font-weight: 500;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.08);
-        }
-        
-        .nav-item.active a {
-    background: transparent;
-    color: #FFFFFF;
-    font-weight: 600;
-    border-left: 4px solid var(--color-accent);
-}
-        
-        .nav-item:not(.active):hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-icon {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #CBD5E1;
-        }
-
-        .nav-item.active .nav-icon {
-            color: var(--color-accent);
-        }
-
-        
-        .logout-btn {
-            margin: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            color: var(--color-white);
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .logout-btn svg {
-            width: 16px;
-            height: 16px;
-        }
-        
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
         /* Top Header Strip */
         .top-header-strip {
             background: var(--color-primary);
@@ -207,33 +39,12 @@
             justify-content: center;
             font-size: 1rem;
         }
-        
-        /* Header Bar */
-        .header-bar {
-            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-            padding: 1.5rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-        }
-        
-        .header-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #FFFFFF;
-        }
-
-        .page-subtitle {
+.page-subtitle {
             color: var(--color-text-light);
             margin-bottom: 0.75rem;
             font-size: 0.95rem;
         }
-        
-        /* Content Area */
-        .content-area {
-            flex: 1;
-            padding: 1.5rem 2rem 2rem;
-        }
-        
-        /* Add Button */
+/* Add Button */
         .add-button {
             display: inline-flex;
             align-items: center;
@@ -629,89 +440,9 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+@media (max-width: 1024px) {.materi-table th, .materi-table td { padding: 0.75rem 0.5rem; font-size: 0.8rem; } .action-btn { width: 32px; height: 32px; font-size: 0.9rem; } .materi-table th:nth-child(3) { width: 30%; }}
         
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .materi-table th,
-            .materi-table td {
-                padding: 0.75rem 0.5rem;
-                font-size: 0.8rem;
-            }
-            
-            .action-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 0.9rem;
-            }
-            
-            .materi-table th:nth-child(3) {
-                width: 30%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .content-area {
-                padding: 1rem;
-            }
-            
-            .table-container {
-                padding: 1rem;
-                border-radius: 12px;
-            }
-            
-            .materi-table {
-                font-size: 0.75rem;
-            }
-            
-            .materi-table th,
-            .materi-table td {
-                padding: 0.6rem 0.4rem;
-            }
-            
-            .materi-table th:nth-child(1) {
-                width: 40px;
-            }
-            
-            .materi-table th:nth-child(2) {
-                width: 90px;
-            }
-            
-            .materi-table th:nth-child(7) {
-                width: 100px;
-            }
-            
-            .action-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 0.8rem;
-            }
-            
-            .action-buttons {
-                gap: 0.3rem;
-            }
-            
-            .search-form {
-                grid-template-columns: 1fr;
-            }
-
-            .search-input-wrap,
-            .search-button,
-            .reset-search {
-                width: 100%;
-            }
-        }
+        @media (max-width: 768px) {.table-container { padding: 1rem; border-radius: 12px; } .materi-table { font-size: 0.75rem; } .materi-table th, .materi-table td { padding: 0.6rem 0.4rem; } .materi-table th:nth-child(1) { width: 40px; } .materi-table th:nth-child(2) { width: 90px; } .materi-table th:nth-child(7) { width: 100px; } .action-btn { width: 28px; height: 28px; font-size: 0.8rem; } .action-buttons { gap: 0.3rem; } .search-form { grid-template-columns: 1fr; } .search-input-wrap, .search-button, .reset-search { width: 100%; }}
         
         /* Empty State */
         .empty-state {
@@ -725,27 +456,12 @@
             margin-bottom: 1rem;
             opacity: 0.5;
         }
-    </style>
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-circle"><img src="{{ asset('images/image.png') }}" alt="Ruma Logo"></div>
-                    <div class="logo-text">Ruma</div>
-                </div>
-            </div>
-            
-            @include('components.sidebar')
-            
-            <div class="logout-btn" onclick="handleLogout()">
-              <i data-lucide="log-out"></i>
-                <span>Keluar</span>
-            </div>
-        </aside>
-        
+        @include('components.dashboard-sidebar')
+
         <!-- Main Content -->
         <main class="main-content">
             

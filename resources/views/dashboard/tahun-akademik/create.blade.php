@@ -111,6 +111,18 @@
         .btn-secondary { background: var(--color-gray); color: var(--color-text); }
         .btn-secondary:hover { background: #D1D5DB; }
 
+        .btn-penugasan {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+        }
+
+        .btn-penugasan:hover {
+            background: #DBEAFE;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
         .error-message { color: #DC2626; font-size: 0.875rem; margin-top: 0.25rem; }
 
         .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
@@ -145,7 +157,7 @@
             margin-top: 0.35rem;
             display: block;
         }
-    </style>
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -191,6 +203,21 @@
                         @enderror
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">
+                            Semester <span class="required">*</span>
+                        </label>
+                        <select name="semester" class="form-input" required>
+                            <option value="">Pilih Semester</option>
+                            <option value="ganjil" {{ old('semester') === 'ganjil' ? 'selected' : '' }}>Ganjil</option>
+                            <option value="genap" {{ old('semester') === 'genap' ? 'selected' : '' }}>Genap</option>
+                        </select>
+                        <span class="hint">Satu tahun akademik bisa punya dua periode: Ganjil dan Genap. Materi baru otomatis mengikuti semester periode yang aktif.</span>
+                        @error('semester')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">
@@ -226,11 +253,22 @@
                             <i data-lucide="save"></i>
                             Simpan
                         </button>
+                        @if($tahunAktif)
+                            <a href="{{ route('tahun-akademik.penugasan', $tahunAktif->id) }}" class="btn btn-penugasan">
+                                <i data-lucide="users"></i>
+                                Atur Penugasan Guru
+                            </a>
+                        @endif
                         <a href="{{ route('tahun-akademik.index') }}" class="btn btn-secondary">
                             <i data-lucide="x"></i>
                             Batal
                         </a>
                     </div>
+                    @if($tahunAktif)
+                        <span class="hint">Penugasan guru mapel untuk periode aktif: <strong>{{ $tahunAktif->periodeLabel() }}</strong>.</span>
+                    @else
+                        <span class="hint">Tombol penugasan guru tersedia setelah ada periode tahun akademik yang aktif.</span>
+                    @endif
                 </form>
             </div>
         </main>

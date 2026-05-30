@@ -9,204 +9,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    @include('components.dashboard-shell-styles')
     <style>
-        :root {
-            --color-primary: #1F2937;
-            --color-primary-dark: #111827;
-            --color-primary-light: #F9FAFB;
-            --color-accent: #F8B803;
-            --color-white: #FFFFFF;
-            --color-gray-light: #F3F4F6;
-            --color-gray: #E5E7EB;
-            --color-text: #111827;
-            --color-text-light: #6B7280;
-            --sidebar-width: 280px;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--color-gray-light);
-            color: var(--color-text);
-            overflow-x: hidden;
-        }
-        
-        .dashboard-container {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, #1F2937 0%, #111827 100%);
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .logo-circle {
-            width: 50px;
-            height: 50px;
-            background: var(--color-white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            flex: 0 0 50px;
-        }
-
-        .logo-circle img {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-        }
-        
-        .logo-icon {
-            width: 26px;
-            height: 26px;
-            color: var(--color-accent);
-        }
-        
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--color-white);
-            letter-spacing: 1px;
-        }
-        
-        .sidebar-nav {
-            flex: 1;
-            padding: 1.5rem 0;
-            overflow-y: auto;
-        }
-        
-        .nav-item {
-            margin: 0.5rem 1rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-item a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            color: var(--color-white);
-            text-decoration: none;
-            font-weight: 500;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-item.active a {
-            background: transparent;
-            color: #FFFFFF;
-            font-weight: 600;
-            border-left: 4px solid var(--color-accent);
-        }
-        
-        .nav-item:not(.active):hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-icon {
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #CBD5E1;
-        }
-
-        .nav-item.active .nav-icon {
-            color: var(--color-accent);
-        }
-        
-        .logout-btn {
-            margin: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            color: var(--color-white);
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* top header strip removed for unified header */
-        
-        .header-bar {
-            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #FFFFFF;
-            letter-spacing: 0.5px;
-        }
-
-        
-        
-        .content-area {
-            flex: 1;
-            padding: 2rem;
-        }
-
-        
         .form-container {
             background: var(--color-white);
             border-radius: 16px;
@@ -374,11 +178,8 @@
             justify-content: center;
         }
 
-        .cover-modal-body {
-            padding: 1.5rem;
-        }
-
-        .cover-modal-grid {
+        .cover-modal-
+.cover-modal-grid {
             display: grid;
             grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
             gap: 1.5rem;
@@ -529,6 +330,41 @@
             background: #FEE2E2;
             border: 1px solid #FCA5A5;
             color: #991B1B;
+        }
+
+        .ta-period-banner {
+            background: #E8F5E9;
+            border: 1px solid rgba(56, 142, 60, 0.35);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: #1B5E20;
+            margin-bottom: 1.25rem;
+        }
+
+        .ta-period-banner.warning {
+            background: #FFF9E6;
+            border-color: rgba(248, 184, 3, 0.45);
+            color: #7A4A00;
+        }
+
+        .ta-period-banner i {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .ta-period-banner strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .ta-period-banner span {
+            font-size: 0.9rem;
+            opacity: 0.95;
         }
         
         .required {
@@ -895,47 +731,12 @@
             border-radius: 14px;
         }
 
-        @media (max-width: 640px) {
-            .book-hero-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .cover-modal-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .cover-ai-preview {
-                grid-template-columns: 1fr;
-            }
-
-            .pdf-selection-range {
-                grid-template-columns: 1fr;
-            }
-
-            .pdf-pages-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-    </style>
+        @media (max-width: 640px) {.book-hero-grid { grid-template-columns: 1fr; } .cover-modal-grid { grid-template-columns: 1fr; } .cover-ai-preview { grid-template-columns: 1fr; } .pdf-selection-range { grid-template-columns: 1fr; } .pdf-pages-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-circle"><img src="{{ asset('images/image.png') }}" alt="Ruma Logo"></div>
-                    <div class="logo-text">Ruma</div>
-                </div>
-            </div>
-            
-            @include('components.sidebar')
-            
-            <div class="logout-btn" onclick="handleLogout()" style="display:flex; align-items:center; gap:8px; justify-content:center;">
-            <i data-lucide="log-out"></i>
-            <span>Keluar</span>
-        </div>
-        </aside>
+        @include('components.dashboard-sidebar')
 
         
         <!-- Main Content -->
@@ -967,7 +768,25 @@
                     </div>
                 @endif
 
-                <form action="{{ route('materi.store') }}" method="POST" enctype="multipart/form-data" class="form-container">
+                @if($tahunAktif)
+                    <div class="ta-period-banner">
+                        <i data-lucide="calendar-check"></i>
+                        <div>
+                            <strong>Periode aktif: Semester {{ $tahunAktif->semesterLabel() }} — {{ $tahunAktif->nama }}</strong>
+                            <span>Materi yang Anda buat otomatis masuk ke semester ini. Admin dapat mengganti periode aktif di menu Tahun Akademik.</span>
+                        </div>
+                    </div>
+                @else
+                    <div class="ta-period-banner warning">
+                        <i data-lucide="alert-triangle"></i>
+                        <div>
+                            <strong>Belum ada tahun akademik aktif</strong>
+                            <span>Hubungi admin untuk mengaktifkan periode semester sebelum menambah mata pelajaran.</span>
+                        </div>
+                    </div>
+                @endif
+
+                <form action="{{ route('materi.store') }}" method="POST" enctype="multipart/form-data" class="form-container" @if(!$tahunAktif) onsubmit="return false;" @endif>
                     @csrf
                     <input type="hidden" name="generated_cover_temp_path" id="generated_cover_temp_path" value="{{ old('generated_cover_temp_path') }}">
                     <input type="hidden" name="use_generated_cover" id="use_generated_cover" value="{{ old('use_generated_cover', 0) }}">
@@ -1017,33 +836,19 @@
                                 @enderror
                             </div>
 
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Level</label>
-                                    <select name="level_id" class="form-select">
-                                        <option value="">Pilih Level</option>
-                                        @foreach($levels as $level)
-                                            <option value="{{ $level->id }}" {{ old('level_id') == $level->id ? 'selected' : '' }}>
-                                                {{ $level->nama }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('level_id')
-                                        <span class="error-message">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Semester</label>
-                                    <select name="semester" class="form-select">
-                                        <option value="">Pilih Semester</option>
-                                        <option value="ganjil" {{ old('semester') === 'ganjil' ? 'selected' : '' }}>Ganjil</option>
-                                        <option value="genap" {{ old('semester') === 'genap' ? 'selected' : '' }}>Genap</option>
-                                    </select>
-                                    <span class="hint">Gunakan Ganjil untuk semester gasal, dan Genap untuk semester genap.</span>
-                                    @error('semester')
-                                        <span class="error-message">{{ $message }}</span>
-                                    @enderror
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">Level</label>
+                                <select name="level_id" class="form-select">
+                                    <option value="">Pilih Level</option>
+                                    @foreach($levels as $level)
+                                        <option value="{{ $level->id }}" {{ old('level_id') == $level->id ? 'selected' : '' }}>
+                                            {{ $level->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('level_id')
+                                    <span class="error-message">{{ $message }}</span>
+                                @enderror
                             </div>
 
                             <div class="book-cover-caption" style="margin-top: 1.25rem;">

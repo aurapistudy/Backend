@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\GuruMateri;
+use App\Models\Materi;
+use App\Models\Pengguna;
 use App\Models\TahunAkademik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +32,9 @@ class TahunAkademikController extends Controller
 
     public function create()
     {
-        return view('dashboard.tahun-akademik.create');
+        $tahunAktif = TahunAkademik::active();
+
+        return view('dashboard.tahun-akademik.create', compact('tahunAktif'));
     }
 
     public function store(Request $request)
@@ -45,6 +49,62 @@ class TahunAkademikController extends Controller
 
         return redirect()->route('tahun-akademik.index')
             ->with('success', 'Tahun akademik berhasil ditambahkan!');
+    }
+
+    public function penugasan(string $id)
+    {
+        $tahunAkademik = TahunAkademik::findOrFail($id);
+
+        $guruList = Pengguna::query()
+            ->where('peran', 'guru')
+            ->where('status_aktif', true)
+            ->orderBy('nama')
+            ->get(['id', 'nama', 'email']);
+
+        $materiList = Materi::query()
+            ->where('status_aktif', true)
+            ->orderBy('judul')
+            ->get(['id', 'judul']);
+
+        $assignedByGuru = GuruMateri::query()
+            ->where('tahun_akademik_id', $tahunAkademik->id)
+            ->get(['pengguna_id', 'materi_id'])
+            ->groupBy('pengguna_id')
+            ->map(fn ($rows) => $rows->pluck('materi_id')->map(fn ($materiId) => (int) $materiId)->values()->all());
+
+        return view('dashboard.tahun-akademik.penugasan', compact(
+            'tahunAkademik',
+            'guruList',
+            'materiList',
+            'assignedByGuru'
+        ));
+    }
+
+    public function updatePenugasan(Request $request, string $id)
+    {
+        $tahunAkademik = TahunAkademik::findOrFail($id);
+
+        $request->validate([
+            'penugasan' => 'nullable|array',
+            'penugasan.*' => 'nullable|array',
+            'penugasan.*.*' => 'integer|exists:materi,id',
+        ]);
+
+        $guruList = Pengguna::query()
+            ->where('peran', 'guru')
+            ->where('status_aktif', true)
+            ->get();
+
+        $penugasan = $request->input('penugasan', []);
+
+        foreach ($guruList as $guru) {
+            $materiIds = array_map('intval', $penugasan[$guru->id] ?? $penugasan[(string) $guru->id] ?? []);
+            $guru->syncMateriAsGuru($materiIds, (int) $tahunAkademik->id);
+        }
+
+        return redirect()
+            ->route('tahun-akademik.show', $tahunAkademik->id)
+            ->with('success', "Penugasan guru untuk {$tahunAkademik->periodeLabel()} berhasil disimpan.");
     }
 
     public function show(string $id)
@@ -115,7 +175,7 @@ class TahunAkademikController extends Controller
         });
 
         return redirect()->route('tahun-akademik.index')
-            ->with('success', "Tahun akademik {$tahunAkademik->nama} sekarang aktif.");
+            ->with('success', "Periode {$tahunAkademik->periodeLabel()} sekarang aktif.");
     }
 
     private function validatePayload(Request $request, ?int $ignoreId = null): array
@@ -126,15 +186,20 @@ class TahunAkademikController extends Controller
                 'string',
                 'max:20',
                 'regex:/^\d{4}\/\d{4}$/',
-                Rule::unique('tahun_akademik', 'nama')->ignore($ignoreId),
+                Rule::unique('tahun_akademik', 'nama')
+                    ->where('semester', $request->input('semester'))
+                    ->ignore($ignoreId),
             ],
+            'semester' => 'required|in:ganjil,genap',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after:tanggal_mulai',
             'status_aktif' => 'boolean',
         ], [
             'nama.required' => 'Nama tahun akademik wajib diisi.',
             'nama.regex' => 'Format nama harus seperti 2025/2026.',
-            'nama.unique' => 'Tahun akademik sudah ada.',
+            'nama.unique' => 'Periode tahun akademik dengan semester ini sudah ada.',
+            'semester.required' => 'Semester wajib dipilih.',
+            'semester.in' => 'Semester harus Ganjil atau Genap.',
             'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
             'tanggal_selesai.required' => 'Tanggal selesai wajib diisi.',
             'tanggal_selesai.after' => 'Tanggal selesai harus setelah tanggal mulai.',

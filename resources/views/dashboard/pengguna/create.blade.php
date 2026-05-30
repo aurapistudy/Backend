@@ -8,160 +8,16 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
+    @include('components.dashboard-shell-styles')
     <style>
         :root {
-            --color-accent: #F8B803;
             --color-accent-dark: #E6A500;
             --color-accent-light: #FFF9E6;
             --color-sidebar: #111827;
             --color-sidebar-dark: #0b1220;
-            --color-white: #FFFFFF;
-            --color-gray-light: #F5F5F5;
-            --color-gray: #E5E7EB;
-            --color-text: #1F2937;
             --color-muted: #6B7280;
-            --sidebar-width: 280px;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--color-gray-light);
-            color: var(--color-text);
-            overflow-x: hidden;
-        }
-
-        .dashboard-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--color-sidebar) 0%, var(--color-sidebar-dark) 100%);
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo-circle {
-            width: 50px;
-            height: 50px;
-            background: var(--color-white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-
-        .logo-icon {
-            width: 26px;
-            height: 26px;
-            color: var(--color-accent);
-        }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--color-white);
-            letter-spacing: 1px;
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            padding: 1.5rem 0;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            margin: 0.5rem 1rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            color: var(--color-white);
-            text-decoration: none;
-            font-weight: 500;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item.active a {
-            background: rgba(248, 184, 3, 0.06);
-            color: var(--color-white);
-            font-weight: 600;
-            border-left: 4px solid var(--color-accent);
-            padding-left: calc(1.25rem - 4px);
-        }
-
-        .nav-item:not(.active):hover a {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .nav-icon {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .logout-btn {
-            margin: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            color: var(--color-white);
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .top-header-strip {
+.top-header-strip {
             background: var(--color-sidebar);
             padding: 0.75rem 2rem;
             display: flex;
@@ -190,25 +46,7 @@
             justify-content: center;
             font-size: 1rem;
         }
-
-        .header-bar {
-            background: linear-gradient(135deg, var(--color-sidebar) 0%, var(--color-sidebar-dark) 100%);
-            padding: 1.5rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-        }
-
-        .header-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--color-white);
-        }
-
-        .content-area {
-            flex: 1;
-            padding: 2rem;
-        }
-
-        .form-container {
+.form-container {
             background: var(--color-white);
             border-radius: 16px;
             padding: 2rem;
@@ -375,27 +213,12 @@
             margin-top: 0.35rem;
             display: block;
         }
-    </style>
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-circle"><img src="{{ asset('images/image.png') }}" alt="Ruma Logo"></div>
-                    <div class="logo-text">Ruma</div>
-                </div>
-            </div>
-            
-            @include('components.sidebar')
-            
-            <div class="logout-btn" onclick="handleLogout()" style="display:flex; align-items:center; gap:8px; justify-content:center;">
-    <i data-lucide="log-out"></i>
-    <span>Keluar</span>
-</div>
-        </aside>
-        
+        @include('components.dashboard-sidebar')
+
         <!-- Main Content -->
         <main class="main-content">
           

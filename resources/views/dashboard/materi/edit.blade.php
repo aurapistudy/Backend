@@ -8,63 +8,16 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
+    @include('components.dashboard-shell-styles')
     <style>
         :root {
-            --color-accent: #F8B803;
             --color-accent-dark: #E6A500;
             --color-accent-light: #FFF9E6;
             --color-sidebar: #111827;
             --color-sidebar-dark: #0b1220;
-            --color-white: #FFFFFF;
-            --color-gray-light: #F5F5F5;
-            --color-gray: #E5E7EB;
-            --color-text: #1F2937;
             --color-muted: #6B7280;
-            --sidebar-width: 280px;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--color-gray-light); color: var(--color-text); overflow-x: hidden; }
-        .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--color-sidebar) 0%, var(--color-sidebar-dark) 100%);
-            position: fixed;
-            height: 100vh;
-            left: 0; top: 0; z-index: 1000;
-            display: flex; flex-direction: column;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
-        }
-        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-        .logo-container { display: flex; align-items: center; gap: 1rem; }
-        .logo-circle {
-            width: 50px; height: 50px; background: var(--color-white); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-        .logo-text { font-size: 1.5rem; font-weight: 800; color: var(--color-white); letter-spacing: 1px; }
-        .sidebar-nav { flex: 1; padding: 1.5rem 0; overflow-y: auto; }
-        .nav-item { margin: 0.5rem 1rem; border-radius: 12px; transition: all 0.3s ease; }
-        .nav-item a {
-            display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; color: var(--color-white);
-            text-decoration: none; font-weight: 500; border-radius: 12px; transition: all 0.3s ease;
-        }
-        .nav-item.active a {
-            background: rgba(248, 184, 3, 0.06); color: var(--color-white); font-weight: 600;
-            border-left: 4px solid var(--color-accent); padding-left: calc(1.25rem - 4px);
-        }
-        .nav-item:not(.active):hover a { background: rgba(255, 255, 255, 0.03); }
-        .nav-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
-        .logout-btn {
-            margin: 1rem; padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; color: var(--color-white);
-            font-weight: 500; cursor: pointer; transition: all 0.3s ease; text-align: center;
-        }
-        .logout-btn:hover { background: rgba(255, 255, 255, 0.08); }
-        .main-content { flex: 1; margin-left: var(--sidebar-width); min-height: 100vh; display: flex; flex-direction: column; }
-        .header-bar { background: linear-gradient(135deg, var(--color-sidebar) 0%, var(--color-sidebar-dark) 100%); padding: 1.5rem 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12); }
-        .header-title { font-size: 1.75rem; font-weight: 700; color: var(--color-white); }
-        .content-area { flex: 1; padding: 2rem; }
-        .back-links { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.back-links { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
         .back-link {
             display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-text); text-decoration: none; font-weight: 600;
             background: var(--color-white); border: 1px solid var(--color-gray); border-radius: 10px; padding: 0.45rem 0.75rem;
@@ -108,30 +61,12 @@
         .btn-secondary { background: var(--color-gray); color: var(--color-text); }
         .btn-secondary:hover { background: #D1D5DB; }
 
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .main-content { margin-left: 0; }
-            .content-area { padding: 1rem; }
-            .header-bar { padding: 1.2rem 1rem; }
-            .form-container { padding: 1.25rem; }
-        }
-    </style>
+        @media (max-width: 768px) {.form-container { padding: 1.25rem; }}
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-circle"><img src="{{ asset('images/image.png') }}" alt="Ruma Logo"></div>
-                    <div class="logo-text">Ruma</div>
-                </div>
-            </div>
-            @include('components.sidebar')
-            <div class="logout-btn" onclick="handleLogout()" style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                <i data-lucide="log-out"></i>
-                <span>Keluar</span>
-            </div>
-        </aside>
+        @include('components.dashboard-sidebar')
 
         <main class="main-content">
             <header class="header-bar">
@@ -185,33 +120,27 @@
                         @enderror
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Level</label>
-                            <select name="level_id" class="form-select">
-                                <option value="">Pilih Level</option>
-                                @foreach($levels as $level)
-                                    <option value="{{ $level->id }}" {{ old('level_id', $materi->level_id) == $level->id ? 'selected' : '' }}>
-                                        {{ $level->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('level_id')
-                                <span class="error-message">{{ $message }}</span>
-                            @enderror
+                    <div class="form-group">
+                        <label class="form-label">Level</label>
+                        <select name="level_id" class="form-select">
+                            <option value="">Pilih Level</option>
+                            @foreach($levels as $level)
+                                <option value="{{ $level->id }}" {{ old('level_id', $materi->level_id) == $level->id ? 'selected' : '' }}>
+                                    {{ $level->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('level_id')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Semester</label>
+                        <div class="form-input" style="background: #F9FAFB; cursor: default;">
+                            {{ $materi->semester ? ucfirst($materi->semester) : 'Belum ditetapkan' }}
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Semester</label>
-                            <select name="semester" class="form-select">
-                                <option value="">Pilih Semester</option>
-                                <option value="ganjil" {{ old('semester', $materi->semester) === 'ganjil' ? 'selected' : '' }}>Ganjil</option>
-                                <option value="genap" {{ old('semester', $materi->semester) === 'genap' ? 'selected' : '' }}>Genap</option>
-                            </select>
-                            <span class="hint">Gunakan Ganjil untuk semester gasal, dan Genap untuk semester genap.</span>
-                            @error('semester')
-                                <span class="error-message">{{ $message }}</span>
-                            @enderror
-                        </div>
+                        <span class="hint">Semester ditetapkan otomatis saat mata pelajaran dibuat, sesuai periode tahun akademik yang aktif.</span>
                     </div>
 
                     <div class="form-group">

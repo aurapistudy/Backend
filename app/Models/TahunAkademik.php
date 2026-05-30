@@ -9,8 +9,13 @@ class TahunAkademik extends Model
 {
     protected $table = 'tahun_akademik';
 
+    public const SEMESTER_GANJIL = 'ganjil';
+
+    public const SEMESTER_GENAP = 'genap';
+
     protected $fillable = [
         'nama',
+        'semester',
         'tanggal_mulai',
         'tanggal_selesai',
         'status_aktif',
@@ -42,6 +47,26 @@ class TahunAkademik extends Model
         $id = static::active()?->id;
 
         return $id ? (int) $id : null;
+    }
+
+    public static function activeSemester(): ?string
+    {
+        $semester = static::active()?->semester;
+
+        return $semester ? (string) $semester : null;
+    }
+
+    public function semesterLabel(): string
+    {
+        return match ($this->semester) {
+            self::SEMESTER_GENAP => 'Genap',
+            default => 'Ganjil',
+        };
+    }
+
+    public function periodeLabel(): string
+    {
+        return "{$this->nama} — Semester {$this->semesterLabel()}";
     }
 
     public static function clearActiveCache(): void

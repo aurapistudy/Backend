@@ -195,6 +195,10 @@ Route::middleware('auth')->group(function () {
 
             Route::post('dashboard/tahun-akademik/{tahun_akademik}/activate', [App\Http\Controllers\TahunAkademikController::class, 'activate'])
                 ->name('tahun-akademik.activate');
+            Route::get('dashboard/tahun-akademik/{tahun_akademik}/penugasan', [App\Http\Controllers\TahunAkademikController::class, 'penugasan'])
+                ->name('tahun-akademik.penugasan');
+            Route::put('dashboard/tahun-akademik/{tahun_akademik}/penugasan', [App\Http\Controllers\TahunAkademikController::class, 'updatePenugasan'])
+                ->name('tahun-akademik.penugasan.update');
             Route::resource('dashboard/tahun-akademik', App\Http\Controllers\TahunAkademikController::class)->names([
                 'index' => 'tahun-akademik.index',
                 'create' => 'tahun-akademik.create',

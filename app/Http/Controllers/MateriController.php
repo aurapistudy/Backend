@@ -8,6 +8,7 @@ use App\Models\Level;
 use App\Models\Materi;
 use App\Models\MateriBab;
 use App\Models\MataPelajaran;
+use App\Models\TahunAkademik;
 use App\Services\HuggingFaceCoverService;
 use App\Services\PdfCompressionService;
 use Illuminate\Http\Request;
@@ -74,12 +75,12 @@ class MateriController extends Controller
     public function create()
     {
         $levels = Level::where('status_aktif', true)->orderBy('nama')->get();
-        // Untuk guru mapel baru yang belum punya assignment, form create tetap perlu menampilkan pilihan kategori.
-        // Pembatasan akses dilakukan pada list/show/edit via assignment materi.
         $mataPelajarans = MataPelajaran::where('status_aktif', true)
             ->orderBy('nama')
             ->get();
-        return view('dashboard.materi.create', compact('levels', 'mataPelajarans'));
+        $tahunAktif = TahunAkademik::active();
+
+        return view('dashboard.materi.create', compact('levels', 'mataPelajarans', 'tahunAktif'));
     }
 
     /**
@@ -87,6 +88,15 @@ class MateriController extends Controller
      */
     public function store(Request $request)
     {
+        $tahunAktif = TahunAkademik::active();
+        if (!$tahunAktif || !$tahunAktif->semester) {
+            return redirect()->route('materi.create')
+                ->withInput()
+                ->withErrors([
+                    'tahun_akademik' => 'Tidak ada tahun akademik aktif. Admin harus mengaktifkan periode semester terlebih dahulu.',
+                ]);
+        }
+
         $maxUploadKb = $this->getServerUploadLimitInKb();
 
         $validated = $request->validate([
@@ -94,7 +104,6 @@ class MateriController extends Controller
             'deskripsi' => 'nullable|string',
             'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
             'level_id' => 'nullable|exists:level,id',
-            'semester' => 'nullable|in:ganjil,genap',
             'judul_bab_pertama' => 'required|string|max:200',
             'tipe_konten' => 'required|in:teks,file',
             'konten_teks' => 'nullable|string|required_if:tipe_konten,teks',
@@ -124,7 +133,6 @@ class MateriController extends Controller
             'file_path.max' => 'Ukuran file materi melebihi batas upload server.',
             'mata_pelajaran_id.exists' => 'Kategori yang dipilih tidak valid',
             'level_id.exists' => 'Level yang dipilih tidak valid',
-            'semester.in' => 'Semester harus Ganjil atau Genap.',
             'cover_path.image' => 'Cover mata pelajaran harus berupa gambar.',
             'cover_path.mimes' => 'Format cover mata pelajaran harus JPG, JPEG, PNG, atau WEBP.',
             'cover_path.max' => 'Ukuran cover mata pelajaran terlalu besar. Maksimal 5 MB. Silakan kompres atau pilih gambar yang lebih kecil.',
@@ -181,6 +189,7 @@ class MateriController extends Controller
         $validated['jumlah_halaman'] = null;
         $validated['dibuat_oleh'] = Auth::id();
         $validated['status_aktif'] = $request->has('status_aktif') ? true : false;
+        $validated['semester'] = $tahunAktif->semester;
 
         DB::transaction(function () use ($validated, $request, $firstBabPayload) {
             $materi = Materi::create($validated);
@@ -316,14 +325,12 @@ class MateriController extends Controller
             'deskripsi' => 'nullable|string',
             'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
             'level_id' => 'nullable|exists:level,id',
-            'semester' => 'nullable|in:ganjil,genap',
             'cover_path' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'status_aktif' => 'boolean',
         ], [
             'judul.required' => 'Judul wajib diisi',
             'mata_pelajaran_id.exists' => 'Kategori yang dipilih tidak valid',
             'level_id.exists' => 'Level yang dipilih tidak valid',
-            'semester.in' => 'Semester harus Ganjil atau Genap.',
             'cover_path.image' => 'Cover mata pelajaran harus berupa gambar.',
             'cover_path.mimes' => 'Format cover mata pelajaran harus JPG, JPEG, PNG, atau WEBP.',
             'cover_path.max' => 'Ukuran cover mata pelajaran terlalu besar. Maksimal 5 MB. Silakan kompres atau pilih gambar yang lebih kecil.',

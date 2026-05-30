@@ -9,169 +9,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    @include('components.dashboard-shell-styles')
     <style>
-        :root {
-            --color-primary: #1F2937;
-            --color-primary-dark: #111827;
-            --color-primary-light: #F9FAFB;
-            --color-accent: #F8B803;
-            --color-white: #FFFFFF;
-            --color-gray-light: #F3F4F6;
-            --color-gray: #E5E7EB;
-            --color-text: #111827;
-            --color-text-light: #6B7280;
-            --sidebar-width: 280px;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--color-gray-light);
-            color: var(--color-text);
-            overflow-x: hidden;
-        }
-
-        .dashboard-container { display: flex; min-height: 100vh; }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, #1F2937 0%, #111827 100%);
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .logo-container { display: flex; align-items: center; gap: 1rem; }
-        .logo-circle {
-            width: 50px;
-            height: 50px;
-            background: var(--color-white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--color-white);
-            letter-spacing: 1px;
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            padding: 1.5rem 0;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            margin: 0.5rem 1rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            color: var(--color-white);
-            text-decoration: none;
-            font-weight: 500;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-item.active a {
-            background: transparent;
-            color: #FFFFFF;
-            font-weight: 600;
-            border-left: 4px solid var(--color-accent);
-        }
-
-        .nav-item:not(.active):hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-icon {
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: #CBD5E1;
-        }
-
-        .nav-item.active .nav-icon {
-            color: var(--color-accent);
-        }
-
-        .logout-btn {
-            margin: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            color: var(--color-white);
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .logout-btn:hover { background: rgba(255, 255, 255, 0.3); }
-
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header-bar {
-            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #FFFFFF;
-            letter-spacing: 0.5px;
-        }
-
-        .content-area { flex: 1; padding: 2rem; }
-
         .back-link-clean {
             display: inline-flex;
             align-items: center;
@@ -398,36 +237,14 @@
         .pdf-page-subtitle, .pdf-selection-empty, .pdf-selection-loading, .current-file { color:#6B7280; font-size:.9rem; }
         .current-file { margin-top:.5rem; }
 
-        @media (max-width: 960px) {
-            .hero-panel { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 960px) {.hero-panel { grid-template-columns: 1fr; }}
 
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .main-content { margin-left: 0; }
-            .content-area { padding: 1rem; }
-            .header-bar { padding: 1.1rem 1rem; }
-            .form-container { padding: 1.25rem; }
-        }
-    </style>
+        @media (max-width: 768px) {.form-container { padding: 1.25rem; }}
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-circle"><img src="{{ asset('images/image.png') }}" alt="Ruma Logo"></div>
-                    <div class="logo-text">Ruma</div>
-                </div>
-            </div>
-
-            @include('components.sidebar')
-
-            <div class="logout-btn" onclick="handleLogout()">
-                <i data-lucide="log-out"></i>
-                <span>Keluar</span>
-            </div>
-        </aside>
+        @include('components.dashboard-sidebar')
 
         <main class="main-content">
             <header class="header-bar">

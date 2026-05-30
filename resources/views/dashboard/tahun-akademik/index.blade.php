@@ -174,6 +174,7 @@
         .action-btn.edit { background: #FFF9E6; color: var(--color-accent); }
         .action-btn.delete { background: #FFEBEE; color: #D32F2F; }
         .action-btn.activate { background: #E8F5E9; color: #388E3C; }
+        .action-btn.penugasan { background: #EFF6FF; color: #1D4ED8; }
         .action-btn:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
 
         .activate-form { display: inline; margin: 0; padding: 0; }
@@ -225,10 +226,8 @@
 
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        @media (max-width: 768px) {
-            .pengguna-table { font-size: 0.85rem; }
-        }
-    </style>
+        @media (max-width: 768px) {.pengguna-table { font-size: 0.85rem; }}
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -256,9 +255,9 @@
                     <div class="info-card-aktif">
                         <i data-lucide="calendar-check"></i>
                         <div>
-                            <strong>Tahun akademik aktif: {{ $tahunAktif->nama }}</strong>
+                            <strong>Tahun akademik aktif: {{ $tahunAktif->periodeLabel() }}</strong>
                             <span>
-                                Periode {{ $tahunAktif->tanggal_mulai->format('d M Y') }} – {{ $tahunAktif->tanggal_selesai->format('d M Y') }}
+                                Periode {{ $tahunAktif->tanggal_mulai->format('d M Y') }} – {{ $tahunAktif->tanggal_selesai->format('d M Y') }}. Materi baru otomatis masuk ke semester ini.
                             </span>
                         </div>
                     </div>
@@ -276,6 +275,12 @@
                             <i data-lucide="plus"></i>
                             <span>Tambah Tahun Akademik</span>
                         </a>
+                        @if($tahunAktif)
+                            <a href="{{ route('tahun-akademik.penugasan', $tahunAktif->id) }}" class="add-button" style="background:#EFF6FF;color:#1D4ED8;box-shadow:0 4px 12px rgba(59,130,246,0.15);">
+                                <i data-lucide="users"></i>
+                                <span>Penugasan Guru (Aktif)</span>
+                            </a>
+                        @endif
                     </div>
 
                     @include('components.list-search', [
@@ -299,6 +304,7 @@
                                 <tr>
                                     <th>No.</th>
                                     <th>Nama</th>
+                                    <th>Semester</th>
                                     <th>Periode</th>
                                     <th>Status</th>
                                     <th>Jumlah Penugasan</th>
@@ -310,6 +316,7 @@
                                     <tr>
                                         <td>{{ $tahunAkademik->firstItem() + $index }}</td>
                                         <td><strong>{{ $item->nama }}</strong></td>
+                                        <td>{{ $item->semesterLabel() }}</td>
                                         <td>
                                             {{ $item->tanggal_mulai->format('d M Y') }} – {{ $item->tanggal_selesai->format('d M Y') }}
                                         </td>
@@ -323,6 +330,9 @@
                                         <td>{{ $item->penugasan_guru_count }}</td>
                                         <td>
                                             <div class="action-buttons">
+                                                <a href="{{ route('tahun-akademik.penugasan', $item->id) }}" class="action-btn penugasan" title="Penugasan Guru">
+                                                    <i data-lucide="users"></i>
+                                                </a>
                                                 <a href="{{ route('tahun-akademik.show', $item->id) }}" class="action-btn view" title="Lihat">
                                                     <i data-lucide="eye"></i>
                                                 </a>

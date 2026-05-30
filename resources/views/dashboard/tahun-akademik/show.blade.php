@@ -189,7 +189,15 @@
         .btn-primary:hover { background: var(--color-primary-dark); }
         .btn-secondary { background: var(--color-gray); color: var(--color-text); }
         .btn-secondary:hover { background: #d1d5db; }
-    </style>
+
+        .btn-penugasan {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+        }
+
+        .btn-penugasan:hover { background: #DBEAFE; }
+        </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -201,6 +209,12 @@
             </header>
 
             <div class="content-area">
+                @if(session('success'))
+                    <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
                 <div style="margin-bottom: 1.5rem;">
                     <a href="{{ route('tahun-akademik.index') }}" class="back-link">
                         <i data-lucide="arrow-left"></i>
@@ -215,7 +229,7 @@
                                 <i data-lucide="calendar-range" style="width: 34px; height: 34px; color: var(--color-accent);"></i>
                             </div>
                             <div>
-                                <h2 class="detail-title">{{ $tahunAkademik->nama }}</h2>
+                                <h2 class="detail-title">{{ $tahunAkademik->periodeLabel() }}</h2>
                                 <div class="detail-meta">
                                     <span class="meta-badge {{ $tahunAkademik->status_aktif ? 'badge-success' : 'badge-danger' }}">
                                         {{ $tahunAkademik->status_aktif ? 'Aktif' : 'Nonaktif' }}
@@ -226,6 +240,13 @@
                     </div>
 
                     <div class="info-grid">
+                        <div class="info-card">
+                            <div class="info-icon"><i data-lucide="calendar-days"></i></div>
+                            <div>
+                                <div class="info-label">Semester</div>
+                                <div class="info-value">{{ $tahunAkademik->semesterLabel() }}</div>
+                            </div>
+                        </div>
                         <div class="info-card">
                             <div class="info-icon"><i data-lucide="calendar"></i></div>
                             <div>
@@ -257,6 +278,10 @@
                     </div>
 
                     <div class="action-buttons">
+                        <a href="{{ route('tahun-akademik.penugasan', $tahunAkademik->id) }}" class="btn btn-penugasan">
+                            <i data-lucide="users"></i>
+                            Atur Penugasan Guru
+                        </a>
                         <a href="{{ route('tahun-akademik.edit', $tahunAkademik->id) }}" class="btn btn-primary">
                             <i data-lucide="pencil"></i>
                             Edit Tahun Akademik
@@ -269,10 +294,16 @@
                 </div>
 
                 <div class="penugasan-section">
-                    <h3 class="section-heading">
-                        <i data-lucide="book-open"></i>
-                        Penugasan Guru per Materi
-                    </h3>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+                        <h3 class="section-heading" style="margin-bottom:0;">
+                            <i data-lucide="book-open"></i>
+                            Penugasan Guru per Materi
+                        </h3>
+                        <a href="{{ route('tahun-akademik.penugasan', $tahunAkademik->id) }}" class="back-link">
+                            <i data-lucide="users"></i>
+                            Kelola Penugasan
+                        </a>
+                    </div>
 
                     @if($penugasan->isNotEmpty())
                         @foreach($penugasan as $namaGuru => $daftarPenugasan)
@@ -295,6 +326,10 @@
                         <div class="empty-penugasan">
                             <i data-lucide="inbox" style="width:40px;height:40px;margin-bottom:0.75rem;opacity:0.5;"></i>
                             <p>Belum ada penugasan guru pada tahun akademik ini.</p>
+                            <a href="{{ route('tahun-akademik.penugasan', $tahunAkademik->id) }}" class="back-link" style="margin-top:1rem;display:inline-flex;">
+                                <i data-lucide="users"></i>
+                                Atur Penugasan Guru
+                            </a>
                         </div>
                     @endif
                 </div>
