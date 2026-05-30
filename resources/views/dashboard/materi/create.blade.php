@@ -75,6 +75,14 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            flex: 0 0 50px;
+        }
+
+        .logo-circle img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
         }
         
         .logo-icon {
