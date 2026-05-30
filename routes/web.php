@@ -87,11 +87,6 @@ Route::middleware('auth')->group(function () {
     Route::middleware('staff')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index']);
 
-        Route::get('dashboard/mata-pelajaran', [App\Http\Controllers\MataPelajaranController::class, 'index'])
-            ->name('mata-pelajaran.index');
-        Route::get('dashboard/mata-pelajaran/{mata_pelajaran}', [App\Http\Controllers\MataPelajaranController::class, 'show'])
-            ->name('mata-pelajaran.show');
-
         Route::resource('dashboard/materi', App\Http\Controllers\MateriController::class)->names([
         'index' => 'materi.index',
         'create' => 'materi.create',
@@ -209,16 +204,6 @@ Route::middleware('auth')->group(function () {
                 'update' => 'tahun-akademik.update',
                 'destroy' => 'tahun-akademik.destroy',
             ]);
-
-            Route::resource('dashboard/mata-pelajaran', App\Http\Controllers\MataPelajaranController::class)
-                ->except(['index', 'show'])
-                ->names([
-                    'create' => 'mata-pelajaran.create',
-                    'store' => 'mata-pelajaran.store',
-                    'edit' => 'mata-pelajaran.edit',
-                    'update' => 'mata-pelajaran.update',
-                    'destroy' => 'mata-pelajaran.destroy',
-                ]);
 
             Route::resource('dashboard/landing', App\Http\Controllers\LandingItemController::class)->names([
                 'index' => 'landing.index',

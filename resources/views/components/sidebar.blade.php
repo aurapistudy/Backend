@@ -245,17 +245,6 @@
         </a>
     </div>
     
-    @if(auth()->user()?->isAdmin())
-    <div class="nav-item" data-route="mata-pelajaran">
-        <a href="{{ route('mata-pelajaran.index', [], false) }}" data-testid="nav-mata-pelajaran" aria-label="Kategori Mata Pelajaran">
-            <span class="nav-icon">
-                <i data-lucide="library"></i>
-            </span>
-            <span>Kategori Mapel</span>
-        </a>
-    </div>
-    @endif
-
     <div class="nav-item" data-route="materi">
         <a href="{{ route('materi.index', [], false) }}" data-testid="nav-materi" aria-label="Materi Pembelajaran">
             <span class="nav-icon">
@@ -431,9 +420,6 @@
         } 
         else if (currentPath.includes('/dashboard/fiksi') || currentPath.includes('/fiksi')) {
             activeRoute = 'fiksi';
-        }
-        else if (currentPath.includes('/dashboard/mata-pelajaran') || currentPath.includes('/mata-pelajaran')) {
-            activeRoute = 'mata-pelajaran';
         }
         else if (currentPath.includes('/dashboard/materi') || currentPath.includes('/materi')) {
             activeRoute = 'materi';
