@@ -93,8 +93,41 @@
     }
 
     .sidebar-nav {
+        flex: 1;
         padding: 1rem 0;
+        overflow-y: auto;
         scrollbar-width: none;
+    }
+
+    body:not(.siswa-layout) .sidebar .nav-item a {
+        color: #FFFFFF;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    body:not(.siswa-layout) .sidebar .nav-item.active {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    body:not(.siswa-layout) .sidebar .nav-item.active a {
+        color: #FFFFFF;
+        font-weight: 600;
+        border-left: 3px solid #F8B803;
+    }
+
+    body:not(.siswa-layout) .sidebar .nav-item:not(.active):hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    body:not(.siswa-layout) .sidebar .nav-icon {
+        color: #CBD5E1;
+    }
+
+    body:not(.siswa-layout) .sidebar .nav-item.active .nav-icon {
+        color: #F8B803;
     }
 
     body:not(.siswa-layout) .nav-item {
