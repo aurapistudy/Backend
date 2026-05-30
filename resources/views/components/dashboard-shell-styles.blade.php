@@ -44,44 +44,49 @@
     }
 
     .sidebar-header {
-        padding: 2rem 1.5rem;
+        min-height: 72px;
+        padding: 0 1.25rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
     }
 
     .logo-container {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.7rem;
     }
 
     .logo-circle {
-        width: 50px;
-        height: 50px;
+        width: 36px;
+        height: 36px;
         background: var(--color-white);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        flex: 0 0 36px;
         overflow: hidden;
     }
 
     .logo-circle img {
-        width: 70%;
-        height: 70%;
+        width: 24px;
+        height: 24px;
         object-fit: contain;
     }
 
     .logo-text {
-        font-size: 1.5rem;
-        font-weight: 800;
+        font-size: 1rem;
+        font-weight: 600;
         color: var(--color-white);
-        letter-spacing: 1px;
+        letter-spacing: 0;
+        line-height: 1;
     }
 
     .sidebar-nav {
         flex: 1;
-        padding: 1.5rem 0;
+        padding: 1rem 0;
         overflow-y: auto;
         scrollbar-width: none;
     }
@@ -92,52 +97,55 @@
     }
 
     .nav-item {
-        margin: 0.5rem 1rem;
-        border-radius: 12px;
+        margin: 0.25rem 0.85rem;
+        border-radius: 8px;
         transition: all 0.3s ease;
     }
 
     .nav-item a {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        padding: 1rem 1.25rem;
+        gap: 0.75rem;
+        padding: 0.6rem 0.85rem;
         color: #FFFFFF;
         text-decoration: none;
+        font-size: 0.84rem;
         font-weight: 500;
-        border-radius: 12px;
+        line-height: 1.25;
+        border-radius: 8px;
         transition: all 0.3s ease;
     }
 
     .nav-item.active {
         background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
     }
 
     .nav-item.active a {
         background: transparent;
         color: #FFFFFF;
         font-weight: 600;
-        border-left: 4px solid var(--color-accent);
+        border-left: 3px solid var(--color-accent);
     }
 
     .nav-item:not(.active):hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
     }
 
     .nav-icon {
-        width: 24px;
-        height: 24px;
+        width: 19px;
+        height: 19px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
+        font-size: 1rem;
         color: #CBD5E1;
-        flex: 0 0 24px;
+        flex: 0 0 19px;
     }
 
     .nav-icon i {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
     .nav-item.active .nav-icon {
@@ -145,13 +153,14 @@
     }
 
     .logout-btn {
-        margin: 1rem;
-        padding: 0.75rem 1.5rem;
+        margin: 0.85rem;
+        padding: 0.7rem 1rem;
         background: rgba(255, 255, 255, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 12px;
+        border-radius: 8px;
         color: var(--color-white);
         font-weight: 500;
+        font-size: 0.9rem;
         cursor: pointer;
         transition: all 0.3s ease;
         text-align: center;
@@ -181,15 +190,22 @@
 
     .header-bar {
         background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-        padding: 1.5rem 2rem;
+        min-height: 72px;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
     .header-title {
-        font-size: 1.6rem;
+        font-size: 1.15rem;
         font-weight: 700;
         color: #FFFFFF;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
     }
 
     .content-area {
@@ -212,9 +228,6 @@
         }
 
         .header-bar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
             padding: 1rem 1.25rem;
         }
 
