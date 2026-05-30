@@ -6,6 +6,7 @@ use App\Models\Materi;
 use App\Models\Pengguna;
 use App\Models\Siswa;
 use App\Models\Guru;
+use App\Models\TahunAkademik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -39,13 +40,20 @@ class PenggunaController extends Controller
             ->where('status_aktif', true)
             ->orderBy('judul')
             ->get(['id', 'judul']);
+        $tahunAkademikAktif = TahunAkademik::active();
 
-        return view('dashboard.pengguna.create', compact('materiList'));
+        return view('dashboard.pengguna.create', compact('materiList', 'tahunAkademikAktif'));
     }
 
     public function store(Request $request)
     {
         $validated = $this->validatePenggunaPayload($request);
+
+        if ($validated['peran'] === 'guru' && !TahunAkademik::activeId()) {
+            return back()
+                ->withInput()
+                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik.']);
+        }
 
         $pengguna = Pengguna::create([
             'nama' => $validated['nama'],
@@ -63,9 +71,17 @@ class PenggunaController extends Controller
 
     public function show(string $id)
     {
-        $pengguna = Pengguna::with(['siswa', 'guru', 'materiAsGuru'])->findOrFail($id);
+        $pengguna = Pengguna::with(['siswa', 'guru'])->findOrFail($id);
+        $tahunAkademikAktif = TahunAkademik::active();
+        $materiTahunAktif = $pengguna->materiAsGuruAktif();
+        $riwayatPenugasan = $pengguna->penugasanRiwayatGrouped();
 
-        return view('dashboard.pengguna.show', compact('pengguna'));
+        return view('dashboard.pengguna.show', compact(
+            'pengguna',
+            'tahunAkademikAktif',
+            'materiTahunAktif',
+            'riwayatPenugasan'
+        ));
     }
 
     public function edit(string $id)
@@ -75,9 +91,15 @@ class PenggunaController extends Controller
             ->where('status_aktif', true)
             ->orderBy('judul')
             ->get(['id', 'judul']);
-        $assignedMateriIds = $pengguna->materiAsGuru->pluck('id')->all();
+        $assignedMateriIds = $pengguna->assignedMateriIds();
+        $tahunAkademikAktif = TahunAkademik::active();
 
-        return view('dashboard.pengguna.edit', compact('pengguna', 'materiList', 'assignedMateriIds'));
+        return view('dashboard.pengguna.edit', compact(
+            'pengguna',
+            'materiList',
+            'assignedMateriIds',
+            'tahunAkademikAktif'
+        ));
     }
 
     public function update(Request $request, string $id)
@@ -85,6 +107,12 @@ class PenggunaController extends Controller
         $pengguna = Pengguna::with(['siswa', 'guru', 'materiAsGuru'])->findOrFail($id);
 
         $validated = $this->validatePenggunaPayload($request, $pengguna->id, false);
+
+        if ($validated['peran'] === 'guru' && !TahunAkademik::activeId()) {
+            return back()
+                ->withInput()
+                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik.']);
+        }
 
         $updateData = [
             'nama' => $validated['nama'],
@@ -189,6 +217,10 @@ class PenggunaController extends Controller
         }
 
         if ($validated['peran'] === 'guru') {
+            if (!TahunAkademik::activeId()) {
+                return;
+            }
+
             if ($pengguna->guru) {
                 $pengguna->guru->update([
                     'nama_sekolah' => $validated['nama_sekolah'] ?? null,

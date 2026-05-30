@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use App\Models\TahunAkademik;
 
 class ProfileController extends Controller
 {
@@ -17,12 +18,20 @@ class ProfileController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $user->load(['siswa', 'guru', 'materiAsGuru']);
+        $user->load(['siswa', 'guru']);
+        $tahunAkademikAktif = TahunAkademik::active();
+        $materiTahunAktif = $user->materiAsGuruAktif();
+        $riwayatPenugasan = $user->penugasanRiwayatGrouped();
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json(['user' => $user]);
         }
 
-        return view('dashboard.profile', compact('user'));
+        return view('dashboard.profile', compact(
+            'user',
+            'tahunAkademikAktif',
+            'materiTahunAktif',
+            'riwayatPenugasan'
+        ));
     }
 
     /**

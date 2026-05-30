@@ -272,6 +272,15 @@
             <span>Level</span>
         </a>
     </div>
+
+    <div class="nav-item" data-route="tahun-akademik">
+        <a href="{{ route('tahun-akademik.index', [], false) }}" data-testid="nav-tahun-akademik" aria-label="Tahun Akademik">
+            <span class="nav-icon">
+                <i data-lucide="calendar-range"></i>
+            </span>
+            <span>Tahun Akademik</span>
+        </a>
+    </div>
     
     <div class="nav-item" data-route="landing">
         <a href="{{ route('landing.index', [], false) }}" data-testid="nav-landing" aria-label="Landing">
@@ -318,6 +327,17 @@
             <span>Hasil Kuis</span>
         </a>
     </div>
+
+    @if(auth()->user()?->isGuruMapel())
+    <div class="nav-item" data-route="guru-riwayat">
+        <a href="{{ route('guru.riwayat-tahun-akademik', [], false) }}" data-testid="nav-guru-riwayat" aria-label="Riwayat Tahun Akademik">
+            <span class="nav-icon">
+                <i data-lucide="history"></i>
+            </span>
+            <span>Riwayat TA</span>
+        </a>
+    </div>
+    @endif
     
     <div class="nav-item" data-route="profile">
         <a href="/dashboard/profile" data-testid="nav-profile" aria-label="Profile">
@@ -358,11 +378,17 @@
         else if (currentPath.includes('/dashboard/kuis-hasil') || currentPath.includes('/kuis-hasil')) {
             activeRoute = 'kuis-hasil';
         }
+        else if (currentPath.includes('/dashboard/guru/riwayat-tahun-akademik') || currentPath.includes('/guru/riwayat-tahun-akademik')) {
+            activeRoute = 'guru-riwayat';
+        }
         else if (currentPath.includes('/dashboard/kuis') || currentPath.includes('/kuis')) {
             activeRoute = 'kuis';
         }
         else if (currentPath.includes('/dashboard/level') || currentPath.includes('/level')) {
             activeRoute = 'level';
+        }
+        else if (currentPath.includes('/dashboard/tahun-akademik') || currentPath.includes('/tahun-akademik')) {
+            activeRoute = 'tahun-akademik';
         }
         else if (currentPath.includes('/dashboard/aac') || currentPath.includes('/aac')) {
             activeRoute = 'aac';

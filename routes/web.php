@@ -143,6 +143,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/dashboard/profile/upload-foto', [App\Http\Controllers\ProfileController::class, 'uploadFoto'])->name('profile.upload-foto');
         Route::put('/dashboard/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
+        Route::get('/dashboard/guru/riwayat-tahun-akademik', [App\Http\Controllers\GuruPenugasanController::class, 'index'])
+            ->name('guru.riwayat-tahun-akademik');
+
         // AAC bisa diakses juga oleh guru mapel (staff), bukan hanya admin.
         Route::resource('dashboard/aac', App\Http\Controllers\AacController::class)->names([
             'index' => 'aac.index',
@@ -193,6 +196,18 @@ Route::middleware('auth')->group(function () {
                 'edit' => 'level.edit',
                 'update' => 'level.update',
                 'destroy' => 'level.destroy',
+            ]);
+
+            Route::post('dashboard/tahun-akademik/{tahun_akademik}/activate', [App\Http\Controllers\TahunAkademikController::class, 'activate'])
+                ->name('tahun-akademik.activate');
+            Route::resource('dashboard/tahun-akademik', App\Http\Controllers\TahunAkademikController::class)->names([
+                'index' => 'tahun-akademik.index',
+                'create' => 'tahun-akademik.create',
+                'store' => 'tahun-akademik.store',
+                'show' => 'tahun-akademik.show',
+                'edit' => 'tahun-akademik.edit',
+                'update' => 'tahun-akademik.update',
+                'destroy' => 'tahun-akademik.destroy',
             ]);
 
             Route::resource('dashboard/mata-pelajaran', App\Http\Controllers\MataPelajaranController::class)

@@ -188,7 +188,7 @@ class MateriController extends Controller
             // Auto-assign materi yang dibuat ke guru mapel pembuatnya.
             $user = Auth::user();
             if ($user && $user->isGuruMapel()) {
-                $user->materiAsGuru()->syncWithoutDetaching([$materi->id]);
+                $user->attachMateriAsGuru((int) $materi->id);
             }
 
             MateriBab::create(array_merge($firstBabPayload, [

@@ -570,10 +570,12 @@
                                     <div class="info-value">{{ $pengguna->guru->nama_sekolah ?? '-' }}</div>
                                 </div>
                                 <div class="info-card" style="grid-column: 1 / -1;">
-                                    <div class="info-label">Mata Pelajaran yang Dikelola</div>
+                                    <div class="info-label">
+                                        Mata Pelajaran Tahun {{ $tahunAkademikAktif?->nama ?? 'Aktif' }}
+                                    </div>
                                     <div class="info-value">
-                                        @if($pengguna->materiAsGuru->isNotEmpty())
-                                            {{ $pengguna->materiAsGuru->pluck('judul')->join(', ') }}
+                                        @if($materiTahunAktif->isNotEmpty())
+                                            {{ $materiTahunAktif->pluck('judul')->join(', ') }}
                                         @else
                                             -
                                         @endif
@@ -581,6 +583,22 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if($riwayatPenugasan->isNotEmpty())
+                            <div class="content-section">
+                                <h3 class="section-title">Riwayat Penugasan</h3>
+                                <div class="info-grid">
+                                    @foreach($riwayatPenugasan as $tahunNama => $penugasan)
+                                        <div class="info-card" style="grid-column: 1 / -1;">
+                                            <div class="info-label">{{ $tahunNama }}</div>
+                                            <div class="info-value">
+                                                {{ $penugasan->pluck('materi.judul')->filter()->join(', ') ?: '-' }}
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     @endif
 
                     <!-- Action Buttons -->

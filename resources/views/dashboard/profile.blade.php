@@ -590,10 +590,12 @@
                             @endif
                             @if($user->peran === 'guru')
                             <div class="detail-card" style="grid-column: 1 / -1;">
-                                <div class="detail-label">Mapel yang Ditugaskan</div>
+                                <div class="detail-label">
+                                    Mapel Tahun {{ $tahunAkademikAktif?->nama ?? 'Aktif' }}
+                                </div>
                                 <div class="detail-value">
-                                    @if($user->materiAsGuru?->isNotEmpty())
-                                        {{ $user->materiAsGuru->pluck('judul')->join(', ') }}
+                                    @if($materiTahunAktif->isNotEmpty())
+                                        {{ $materiTahunAktif->pluck('judul')->join(', ') }}
                                     @else
                                         -
                                     @endif
@@ -601,6 +603,22 @@
                             </div>
                             @endif
                         </div>
+
+                        @if($user->peran === 'guru' && $riwayatPenugasan->isNotEmpty())
+                        <div class="form-section" style="margin-top: 1.5rem;">
+                            <h3 class="form-section-title"><i data-lucide="history"></i> Riwayat Penugasan</h3>
+                            <div class="details-grid">
+                                @foreach($riwayatPenugasan as $tahunNama => $penugasan)
+                                    <div class="detail-card" style="grid-column: 1 / -1;">
+                                        <div class="detail-label">{{ $tahunNama }}</div>
+                                        <div class="detail-value">
+                                            {{ $penugasan->pluck('materi.judul')->filter()->join(', ') ?: '-' }}
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     
                     <!-- Edit Mode -->

@@ -514,6 +514,15 @@
                     </div>
 
                     <div id="guru_mapel_fields" style="display: {{ old('peran', $pengguna->peran) == 'guru' ? 'block' : 'none' }}; margin-top: 1rem;">
+                        @if($tahunAkademikAktif)
+                            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem;">
+                                Penugasan diperbarui untuk tahun akademik <strong>{{ $tahunAkademikAktif->nama }}</strong>. Riwayat tahun sebelumnya tetap tersimpan.
+                            </div>
+                        @else
+                            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem;">
+                                Belum ada tahun akademik aktif. Atur dulu di menu <strong>Tahun Akademik</strong>.
+                            </div>
+                        @endif
                         <div class="form-group">
                             <label class="form-label">Mata Pelajaran yang Dikelola <span class="required">*</span></label>
                             <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Daftar ini sama dengan item di menu <strong>Mata Pelajaran</strong>.</p>
