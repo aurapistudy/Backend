@@ -31,48 +31,6 @@
         gap: 0.6rem;
     }
 
-    body:not(.siswa-layout) .sidebar-header {
-        min-height: 72px;
-        padding: 0 1.25rem;
-        display: flex;
-        align-items: center;
-    }
-
-    body:not(.siswa-layout) .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 0.7rem;
-    }
-
-    body:not(.siswa-layout) .logo-circle {
-        width: 36px;
-        height: 36px;
-        flex: 0 0 36px;
-        overflow: hidden;
-    }
-
-    body:not(.siswa-layout) .logo-circle img {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
-    }
-
-    body:not(.siswa-layout) .logo-text {
-        font-size: 1rem;
-        font-weight: 600;
-        line-height: 1;
-        letter-spacing: 0;
-    }
-
-    body:not(.siswa-layout) .header-bar {
-        min-height: 72px;
-    }
-
-    body:not(.siswa-layout) .header-title {
-        font-size: 1.15rem;
-        letter-spacing: 0;
-    }
-
     body:not(.siswa-layout) .admin-sidebar-overlay {
         position: fixed;
         inset: 0;
@@ -90,78 +48,6 @@
         body:not(.siswa-layout) .admin-menu-toggle {
             display: inline-flex;
         }
-    }
-
-    .sidebar-nav {
-        flex: 1;
-        padding: 1rem 0;
-        overflow-y: auto;
-        scrollbar-width: none;
-    }
-
-    body:not(.siswa-layout) .sidebar .nav-item a {
-        color: #FFFFFF;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        font-weight: 500;
-        transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    body:not(.siswa-layout) .sidebar .nav-item.active {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    body:not(.siswa-layout) .sidebar .nav-item.active a {
-        color: #FFFFFF;
-        font-weight: 600;
-        border-left: 3px solid #F8B803;
-    }
-
-    body:not(.siswa-layout) .sidebar .nav-item:not(.active):hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    body:not(.siswa-layout) .sidebar .nav-icon {
-        color: #CBD5E1;
-    }
-
-    body:not(.siswa-layout) .sidebar .nav-item.active .nav-icon {
-        color: #F8B803;
-    }
-
-    body:not(.siswa-layout) .nav-item {
-        margin: 0.25rem 0.85rem;
-        border-radius: 8px;
-    }
-
-    body:not(.siswa-layout) .nav-item a {
-        gap: 0.75rem;
-        padding: 0.6rem 0.85rem;
-        font-size: 0.84rem;
-        line-height: 1.25;
-        border-radius: 8px;
-    }
-
-    body:not(.siswa-layout) .nav-item.active a {
-        border-left-width: 3px;
-    }
-
-    body:not(.siswa-layout) .nav-icon {
-        width: 19px;
-        height: 19px;
-        flex: 0 0 19px;
-        font-size: 1rem;
-    }
-
-    body:not(.siswa-layout) .nav-icon i {
-        width: 18px;
-        height: 18px;
-    }
-
-    .sidebar-nav::-webkit-scrollbar {
-        width: 0;
-        height: 0;
     }
 
 @media (max-width: 900px) {
@@ -186,43 +72,9 @@
         margin-left: 0;
     }
 
-    body:not(.siswa-layout) .header-bar {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        padding: 1rem 1.25rem;
-        gap: 0.5rem;
-    }
-
-    body:not(.siswa-layout) .header-title {
-        font-size: 1rem;
-    }
-
     body:not(.siswa-layout) .user-info,
     body:not(.siswa-layout) .user-info-top {
         max-width: calc(100vw - 150px);
-    }
-
-    body:not(.siswa-layout) .content-area {
-        padding: 1.25rem;
-    }
-
-    body:not(.siswa-layout) .sidebar-nav {
-        padding: 1rem 0;
-        display: block;
-    }
-
-    body:not(.siswa-layout) .nav-item {
-        margin: 0.25rem 0.85rem;
-    }
-
-    body:not(.siswa-layout) .nav-item a {
-        padding: 0.85rem 1rem;
-        font-size: 0.9rem;
-    }
-
-    body:not(.siswa-layout) .logout-btn {
-        margin: 0.85rem;
     }
 
     body:not(.siswa-layout) .admin-menu-toggle-inline {

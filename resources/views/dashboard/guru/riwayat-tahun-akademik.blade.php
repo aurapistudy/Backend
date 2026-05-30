@@ -8,91 +8,8 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
+    @include('components.dashboard-shell-styles')
     <style>
-        :root {
-            --color-primary: #1F2937;
-            --color-primary-dark: #111827;
-            --color-primary-light: #F9FAFB;
-            --color-accent: #F8B803;
-            --color-white: #FFFFFF;
-            --color-gray-light: #F3F4F6;
-            --color-gray: #E5E7EB;
-            --color-text: #111827;
-            --color-text-light: #6B7280;
-            --sidebar-width: 280px;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--color-gray-light);
-            color: var(--color-text);
-        }
-
-        .dashboard-container { display: flex; min-height: 100vh; }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .logo-container { display: flex; align-items: center; gap: 1rem; }
-
-        .logo-circle {
-            width: 50px;
-            height: 50px;
-            background: var(--color-white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
-        .logo-text { font-size: 1.5rem; font-weight: 800; color: var(--color-white); }
-
-        .logout-btn {
-            margin: 1rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 12px;
-            color: var(--color-white);
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .main-content {
-            margin-left: var(--sidebar-width);
-            flex: 1;
-            min-height: 100vh;
-        }
-
-        .header-bar {
-            background: var(--color-white);
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--color-gray);
-        }
-
-        .header-title { font-size: 1.5rem; font-weight: 700; }
-
-        .content-area { padding: 2rem; }
-
         .page-subtitle {
             color: var(--color-text-light);
             margin-bottom: 1.5rem;
@@ -225,23 +142,7 @@
 </head>
 <body>
     <div class="dashboard-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-circle">
-                        <img src="{{ asset('images/image.png') }}" alt="Ruma Logo">
-                    </div>
-                    <div class="logo-text">Ruma</div>
-                </div>
-            </div>
-
-            @include('components.sidebar')
-
-            <div class="logout-btn" onclick="handleLogout()" style="display:flex; align-items:center; gap:8px; justify-content:center;">
-                <i data-lucide="log-out"></i>
-                <span>Keluar</span>
-            </div>
-        </aside>
+        @include('components.dashboard-sidebar')
 
         <main class="main-content">
             <header class="header-bar">
