@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\FiltersByAssignedMapel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\MataPelajaran;
 
 class MataPelajaranController extends Controller
@@ -17,6 +18,9 @@ class MataPelajaranController extends Controller
         $search = trim((string) request('search', ''));
 
         $mataPelajarans = $this->applyMapelFilterToMataPelajaran(MataPelajaran::query())
+            ->when($this->isSiswaApiRequest(), function ($query) {
+                $query->where('status_aktif', true);
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
@@ -27,6 +31,10 @@ class MataPelajaranController extends Controller
             ->orderBy('nama')
             ->paginate(10)
             ->withQueryString();
+
+        if ($this->isApiRequest()) {
+            return response()->json($mataPelajarans);
+        }
 
         return view('dashboard.mata-pelajaran.index', compact('mataPelajarans', 'search'));
     }
@@ -55,7 +63,14 @@ class MataPelajaranController extends Controller
 
         $validated['status_aktif'] = $request->has('status_aktif') ? true : false;
 
-        MataPelajaran::create($validated);
+        $mataPelajaran = MataPelajaran::create($validated);
+
+        if ($this->isApiRequest()) {
+            return response()->json([
+                'message' => 'Mata pelajaran berhasil ditambahkan!',
+                'data' => $mataPelajaran,
+            ], 201);
+        }
 
         return redirect()->route('mata-pelajaran.index')
             ->with('success', 'Mata pelajaran berhasil ditambahkan!');
@@ -68,6 +83,11 @@ class MataPelajaranController extends Controller
     {
         $mataPelajaran = MataPelajaran::findOrFail($id);
         $this->authorizeMapelAccess($mataPelajaran->id);
+
+        if ($this->isApiRequest()) {
+            return response()->json($mataPelajaran);
+        }
+
         return view('dashboard.mata-pelajaran.show', compact('mataPelajaran'));
     }
 
@@ -100,6 +120,13 @@ class MataPelajaranController extends Controller
 
         $mataPelajaran->update($validated);
 
+        if ($this->isApiRequest()) {
+            return response()->json([
+                'message' => 'Mata pelajaran berhasil diperbarui!',
+                'data' => $mataPelajaran->fresh(),
+            ]);
+        }
+
         return redirect()->route('mata-pelajaran.index')
             ->with('success', 'Mata pelajaran berhasil diperbarui!');
     }
@@ -112,7 +139,40 @@ class MataPelajaranController extends Controller
         $mataPelajaran = MataPelajaran::findOrFail($id);
         $mataPelajaran->delete();
 
+        if ($this->isApiRequest()) {
+            return response()->json([
+                'message' => 'Mata pelajaran berhasil dihapus!',
+            ]);
+        }
+
         return redirect()->route('mata-pelajaran.index')
             ->with('success', 'Mata pelajaran berhasil dihapus!');
+    }
+
+    /**
+     * Daftar mata pelajaran aktif (untuk dropdown/filter Flutter).
+     */
+    public function aktif()
+    {
+        $mataPelajaranAktif = $this->applyMapelFilterToMataPelajaran(MataPelajaran::query())
+            ->where('status_aktif', true)
+            ->orderBy('nama')
+            ->get();
+
+        return response()->json($mataPelajaranAktif);
+    }
+
+    private function isApiRequest(): bool
+    {
+        return request()->wantsJson() || request()->is('api/*');
+    }
+
+    private function isSiswaApiRequest(): bool
+    {
+        $user = Auth::user();
+
+        return $this->isApiRequest()
+            && $user
+            && $user->peran === 'siswa';
     }
 }
