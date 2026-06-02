@@ -17,7 +17,11 @@ trait FiltersByAssignedMapel
     {
         $user = Auth::user();
 
-        if (!$user || $user->isAdmin()) {
+        if (!$user) {
+            return [];
+        }
+
+        if ($user->isAdmin()) {
             return null;
         }
 
@@ -25,7 +29,8 @@ trait FiltersByAssignedMapel
             return $user->assignedMateriIds();
         }
 
-        return [];
+        // Non-staff (contoh: siswa) tidak dibatasi assignment guru_materi.
+        return null;
     }
 
     protected function applyMapelFilterToMateri(Builder $query): Builder

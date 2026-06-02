@@ -30,13 +30,22 @@ class MateriController extends Controller
     public function index()
     {
         $search = trim((string) request('search', ''));
-        $user = Auth::user();
+        $perPage = (int) request('per_page', 10);
+        $perPage = max(1, min($perPage, 100));
+        $levelId = request('level_id');
+        $mapelId = request('mata_pelajaran_id');
 
         $materi = $this->applyMapelFilterToMateri(
             Materi::with(['pengguna', 'level', 'mataPelajaran'])->withCount('bab')
         )
             ->when($this->isSiswaApiRequest(), function ($query) {
                 $query->where('status_aktif', true);
+            })
+            ->when(is_numeric($levelId), function ($query) use ($levelId) {
+                $query->where('level_id', (int) $levelId);
+            })
+            ->when(is_numeric($mapelId), function ($query) use ($mapelId) {
+                $query->where('mata_pelajaran_id', (int) $mapelId);
             })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
@@ -60,7 +69,7 @@ class MateriController extends Controller
                 });
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json($materi);
