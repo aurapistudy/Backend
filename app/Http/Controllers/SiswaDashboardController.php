@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\CatatanSiswa;
 use App\Models\Kuis;
 use App\Models\KuisHasil;

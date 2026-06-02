@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mobile Password Reset URL (Flutter deep link)
+    |--------------------------------------------------------------------------
+    |
+    | Template tautan reset untuk aplikasi mobile. Gunakan placeholder
+    | {token} dan {email}. Contoh:
+    | akses://reset-password?token={token}&email={email}
+    |
+    */
+
+    'mobile_password_reset_url' => env('APP_MOBILE_PASSWORD_RESET_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

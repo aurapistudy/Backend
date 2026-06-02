@@ -11,7 +11,6 @@ Route::get('/', [LandingPageController::class, 'index'])->name('landing.home');
 Route::post('/ulasan', [LandingPageController::class, 'storeUlasan'])->name('landing.ulasan.store');
 Route::get('/media/{path}', [MediaController::class, 'show'])->where('path', '.*')->name('media.public.show');
 
-// Debug route to log sidebar clicks (enabled only in debug mode).
 if (config('app.debug')) {
     Route::get('/debug/nav-log', function (Request $request) {
         Log::info('nav_click_debug', [
@@ -22,7 +21,6 @@ if (config('app.debug')) {
             'ip' => $request->ip(),
             'user_agent' => (string) $request->userAgent(),
         ]);
-
         return response()->noContent();
     });
 }
@@ -31,7 +29,18 @@ if (config('app.debug')) {
 Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
-
+Route::get('/forgot-password', [App\Http\Controllers\AuthController::class, 'showForgotPasswordForm'])
+    ->middleware('guest')
+    ->name('password.request');
+Route::post('/forgot-password', [App\Http\Controllers\AuthController::class, 'sendResetLink'])
+    ->middleware('guest')
+    ->name('password.email');
+Route::get('/reset-password/{token}', [App\Http\Controllers\AuthController::class, 'showResetPasswordForm'])
+    ->middleware('guest')
+    ->name('password.reset');
+Route::post('/reset-password', [App\Http\Controllers\AuthController::class, 'resetPassword'])
+    ->middleware('guest')
+    ->name('password.update');
 Route::get('/register', [App\Http\Controllers\AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
 

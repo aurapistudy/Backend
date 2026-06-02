@@ -33,6 +33,8 @@ use App\Http\Controllers\AacController;
 // Public routes
 Route::post('/login', [AuthController::class, 'apiLogin']);
 Route::post('/register', [AuthController::class, 'apiRegister']);
+Route::post('/forgot-password', [AuthController::class, 'apiForgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'apiResetPassword']);
 // Panduan
     Route::get('/panduan', [ApiPanduanController::class, 'index']);
 // AAC (public read-only)

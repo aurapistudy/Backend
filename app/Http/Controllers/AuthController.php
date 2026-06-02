@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use App\Models\Pengguna;
 use App\Models\Siswa;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +31,14 @@ class AuthController extends Controller
     public function showRegisterForm()
     {
         return view('auth.register');
+    }
+
+    /**
+     * Show the forgot password form.
+     */
+    public function showForgotPasswordForm()
+    {
+        return view('auth.forgot-password');
     }
 
     /**
@@ -87,6 +98,104 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login');
+    }
+
+    /**
+     * Send a password reset link to the given email.
+     */
+    public function sendResetLink(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+        ]);
+
+        $pengguna = Pengguna::where('email', $validated['email'])->first();
+
+        if ($pengguna) {
+            $reset = $this->createPasswordResetForUser($pengguna);
+
+            try {
+                $this->sendPasswordResetEmail($pengguna, $reset['reset_url']);
+            } catch (\Throwable $exception) {
+                Log::error('password_reset_mail_failed', [
+                    'email' => $pengguna->email,
+                    'error' => $exception->getMessage(),
+                ]);
+
+                return back()
+                    ->withInput()
+                    ->with('status', 'Tautan reset sudah dibuat. Mail server belum aktif, gunakan tautan fallback di bawah.')
+                    ->with('reset_link_fallback', $reset['reset_url']);
+            }
+        }
+
+        return back()->with('status', 'Jika email terdaftar, tautan reset kata sandi telah dikirim.');
+    }
+
+    /**
+     * Show the reset password form for a valid token.
+     */
+    public function showResetPasswordForm(Request $request, string $token)
+    {
+        $email = (string) $request->query('email', '');
+
+        if (!$this->hasValidResetToken($email, $token)) {
+            return redirect()->route('password.request')
+                ->withErrors([
+                    'email' => 'Tautan reset kata sandi tidak valid atau sudah kedaluwarsa.',
+                ]);
+        }
+
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $email,
+        ]);
+    }
+
+    /**
+     * Update the user's password using a reset token.
+     */
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'kata_sandi' => 'required|string|min:6|confirmed',
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'kata_sandi.required' => 'Kata sandi baru wajib diisi',
+            'kata_sandi.min' => 'Kata sandi baru minimal 6 karakter',
+            'kata_sandi.confirmed' => 'Konfirmasi kata sandi tidak cocok',
+        ]);
+
+        if (!$this->hasValidResetToken($validated['email'], $validated['token'])) {
+            throw ValidationException::withMessages([
+                'email' => 'Tautan reset kata sandi tidak valid atau sudah kedaluwarsa.',
+            ]);
+        }
+
+        $pengguna = Pengguna::where('email', $validated['email'])->first();
+
+        if (!$pengguna) {
+            throw ValidationException::withMessages([
+                'email' => 'Akun tidak ditemukan.',
+            ]);
+        }
+
+        $pengguna->forceFill([
+            'kata_sandi' => Hash::make($validated['kata_sandi']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        $pengguna->tokens()->delete();
+        DB::table('password_reset_tokens')->where('email', $validated['email'])->delete();
+
+        return redirect()->route('login')
+            ->with('success', 'Kata sandi berhasil diubah. Silakan login dengan kata sandi baru.');
     }
 
     /**
@@ -284,5 +393,182 @@ class AuthController extends Controller
                 'peran' => $user->peran,
             ],
         ], 201);
+    }
+
+    /**
+     * Kirim tautan reset kata sandi (API / Flutter).
+     */
+    public function apiForgotPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+        ]);
+
+        $pengguna = Pengguna::where('email', $validated['email'])->first();
+
+        if ($pengguna) {
+            $reset = $this->createPasswordResetForUser($pengguna);
+
+            try {
+                $this->sendPasswordResetEmail($pengguna, $reset['reset_url']);
+            } catch (\Throwable $exception) {
+                Log::error('password_reset_mail_failed', [
+                    'email' => $pengguna->email,
+                    'error' => $exception->getMessage(),
+                ]);
+
+                $response = [
+                    'message' => 'Gagal mengirim email reset kata sandi. Periksa konfigurasi mail server atau coba lagi nanti.',
+                ];
+
+                if (config('app.debug')) {
+                    $response['debug'] = [
+                        'reset_url' => $reset['reset_url'],
+                        'token' => $reset['plain_token'],
+                        'email' => $pengguna->email,
+                    ];
+                }
+
+                return response()->json($response, 503);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Jika email terdaftar, tautan reset kata sandi telah dikirim.',
+        ]);
+    }
+
+    /**
+     * Atur ulang kata sandi dengan token dari email (API / Flutter).
+     */
+    public function apiResetPassword(Request $request): JsonResponse
+    {
+        $payload = [
+            'token' => $request->input('token'),
+            'email' => $request->input('email'),
+            'kata_sandi' => $request->input('kata_sandi', $request->input('password')),
+            'kata_sandi_konfirmasi' => $request->input(
+                'kata_sandi_konfirmasi',
+                $request->input(
+                    'password_confirmation',
+                    $request->input('confirm_password', $request->input('confirmPassword'))
+                )
+            ),
+        ];
+
+        $validated = validator($payload, [
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'kata_sandi' => 'required|string|min:6',
+            'kata_sandi_konfirmasi' => 'required|string|same:kata_sandi',
+        ], [
+            'token.required' => 'Token reset wajib diisi',
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'kata_sandi.required' => 'Kata sandi baru wajib diisi',
+            'kata_sandi.min' => 'Kata sandi baru minimal 6 karakter',
+            'kata_sandi_konfirmasi.required' => 'Konfirmasi kata sandi wajib diisi',
+            'kata_sandi_konfirmasi.same' => 'Konfirmasi kata sandi tidak cocok',
+        ])->validate();
+
+        if (!$this->hasValidResetToken($validated['email'], $validated['token'])) {
+            throw ValidationException::withMessages([
+                'token' => 'Tautan reset kata sandi tidak valid atau sudah kedaluwarsa.',
+            ]);
+        }
+
+        $pengguna = Pengguna::where('email', $validated['email'])->first();
+
+        if (!$pengguna) {
+            throw ValidationException::withMessages([
+                'email' => 'Akun tidak ditemukan.',
+            ]);
+        }
+
+        $pengguna->forceFill([
+            'kata_sandi' => Hash::make($validated['kata_sandi']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        $pengguna->tokens()->delete();
+        DB::table('password_reset_tokens')->where('email', $validated['email'])->delete();
+
+        return response()->json([
+            'message' => 'Kata sandi berhasil diubah. Silakan login dengan kata sandi baru.',
+        ]);
+    }
+
+    /**
+     * @return array{plain_token: string, reset_url: string}
+     */
+    private function createPasswordResetForUser(Pengguna $pengguna): array
+    {
+        $plainToken = Str::random(64);
+
+        DB::table('password_reset_tokens')->where('email', $pengguna->email)->delete();
+        DB::table('password_reset_tokens')->insert([
+            'email' => $pengguna->email,
+            'token' => Hash::make($plainToken),
+            'created_at' => now(),
+        ]);
+
+        return [
+            'plain_token' => $plainToken,
+            'reset_url' => $this->buildPasswordResetUrl($plainToken, $pengguna->email),
+        ];
+    }
+
+    private function buildPasswordResetUrl(string $plainToken, string $email): string
+    {
+        $template = config('app.mobile_password_reset_url');
+
+        if (is_string($template) && $template !== '') {
+            return str_replace(
+                ['{token}', '{email}'],
+                [rawurlencode($plainToken), rawurlencode($email)],
+                $template
+            );
+        }
+
+        return route('password.reset', [
+            'token' => $plainToken,
+            'email' => $email,
+        ]);
+    }
+
+    private function sendPasswordResetEmail(Pengguna $pengguna, string $resetUrl): void
+    {
+        Mail::raw(
+            "Halo {$pengguna->nama},\n\nKlik tautan berikut untuk mengatur ulang kata sandi akun Anda:\n{$resetUrl}\n\nTautan ini berlaku selama 60 menit.\nJika Anda tidak meminta reset kata sandi, abaikan email ini.",
+            function ($message) use ($pengguna) {
+                $message->to($pengguna->email, $pengguna->nama)
+                    ->subject('Reset Kata Sandi');
+            }
+        );
+    }
+
+    private function hasValidResetToken(string $email, string $token): bool
+    {
+        if ($email === '' || $token === '') {
+            return false;
+        }
+
+        $record = DB::table('password_reset_tokens')->where('email', $email)->first();
+        if (!$record) {
+            return false;
+        }
+
+        $expiresAt = Carbon::parse($record->created_at)
+            ->addMinutes((int) config('auth.passwords.users.expire', 60));
+
+        if ($expiresAt->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            return false;
+        }
+
+        return Hash::check($token, $record->token);
     }
 }

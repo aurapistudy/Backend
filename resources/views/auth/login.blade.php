@@ -162,6 +162,14 @@
             cursor: pointer;
             user-select: none;
         }
+
+        .form-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
         
         .checkbox-custom {
             width: 20px;
@@ -363,6 +371,18 @@
             color: var(--color-yellow-dark);
             text-decoration: underline;
         }
+
+        .forgot-link {
+            color: var(--color-orange);
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.92rem;
+            white-space: nowrap;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -440,10 +460,13 @@
                 </div>
                 
                 <!-- Remember Password Checkbox -->
-                <div class="checkbox-group">
-                    <input type="checkbox" id="ingat_sandi" name="ingat_sandi" data-testid="login-remember" checked>
-                    <label for="ingat_sandi" class="checkbox-custom" data-testid="login-remember-control"></label>
-                    <label for="ingat_sandi" class="checkbox-label">Ingat kata sandi</label>
+                <div class="form-meta-row">
+                    <div class="checkbox-group" style="margin-bottom: 0;">
+                        <input type="checkbox" id="ingat_sandi" name="ingat_sandi" data-testid="login-remember" checked>
+                        <label for="ingat_sandi" class="checkbox-custom" data-testid="login-remember-control"></label>
+                        <label for="ingat_sandi" class="checkbox-label">Ingat kata sandi</label>
+                    </div>
+                    <a href="{{ route('password.request', [], false) }}" class="forgot-link">Lupa kata sandi?</a>
                 </div>
                 
                 <!-- Login Button -->
@@ -511,4 +534,3 @@
     </script>
 </body>
 </html>
-
