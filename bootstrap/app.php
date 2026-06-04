@@ -14,6 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway (dan load balancer lain) mengakhiri HTTPS di edge; app di dalam container
+        // menerima HTTP. Tanpa ini, route()/form action bisa jadi http:// → peringatan browser.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+        );
+
         $middleware->appendToGroup('web', \App\Http\Middleware\LogWebAuth::class);
         $middleware->alias([
             'staff' => \App\Http\Middleware\EnsureStaff::class,

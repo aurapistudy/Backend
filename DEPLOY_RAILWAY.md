@@ -18,7 +18,8 @@ Minimal isi:
 - `APP_NAME=Ruma`
 - `APP_ENV=production`
 - `APP_DEBUG=false`
-- `APP_URL=https://domain-backend-kamu.up.railway.app`
+- `APP_URL=https://domain-backend-kamu.up.railway.app` (wajib pakai **https://**, jangan `http://`)
+- `SESSION_SECURE_COOKIE=true` (disarankan di production)
 - `APP_KEY=base64:...`
 - `LOG_CHANNEL=stack`
 - `LOG_LEVEL=error`
@@ -98,3 +99,9 @@ Cek urutan ini:
 - `attempt to perform an operation not allowed by the security policy 'SVG'`  
   Imagick sudah aktif tapi ImageMagick mem-blokir SVG. Pastikan Dockerfile
   terbaru sudah di-deploy (sudah mengubah `/etc/ImageMagick-6/policy.xml`).
+
+- Browser: **"The information you're about to submit is not secure"** / tab **Form is not secure**  
+  Halaman dibuka lewat HTTPS (Railway), tapi `action` form masih `http://` karena Laravel
+  belum mengenali proxy SSL. Pastikan `APP_ENV=production`, `APP_URL` pakai `https://`,
+  deploy ulang setelah `trustProxies` di `bootstrap/app.php` aktif. Cek di DevTools →
+  Elements → atribut `action` pada `<form>` harus `https://...`, bukan `http://...`.
