@@ -187,9 +187,11 @@
                                         {{ $isActive ? 'Tahun Aktif' : 'Arsip' }}
                                     </span>
                                 </div>
-                                @if($tahunRow)
+                                @if($tahunRow && ($tahunRow->tanggal_mulai || $tahunRow->tanggal_selesai))
                                     <div class="history-meta">
-                                        {{ $tahunRow->tanggal_mulai->format('d M Y') }} – {{ $tahunRow->tanggal_selesai->format('d M Y') }}
+                                        {{ $tahunRow->tanggal_mulai?->format('d M Y') ?? '—' }}
+                                        –
+                                        {{ $tahunRow->tanggal_selesai?->format('d M Y') ?? '—' }}
                                     </div>
                                 @endif
                                 <ul class="materi-list">

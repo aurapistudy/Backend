@@ -147,7 +147,7 @@ class Pengguna extends Authenticatable
         }
 
         return GuruMateri::query()
-            ->with(['materi:id,judul', 'tahunAkademik:id,nama,status_aktif,tanggal_mulai'])
+            ->with(['materi:id,judul', 'tahunAkademik:id,nama,status_aktif,tanggal_mulai,tanggal_selesai'])
             ->where('pengguna_id', $this->id)
             ->get()
             ->sortByDesc(fn (GuruMateri $row) => $row->tahunAkademik?->tanggal_mulai?->timestamp ?? 0)
