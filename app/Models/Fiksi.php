@@ -10,6 +10,7 @@ class Fiksi extends Model
 
     protected $fillable = [
         'judul_buku',
+        'cover_path',
         'penulis',
         'kategori',
         'tahun_terbit',

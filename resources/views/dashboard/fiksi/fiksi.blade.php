@@ -317,36 +317,54 @@
         .fiksi-table td:nth-child(1) { width: 48px; text-align: center; }
 
         .fiksi-table th:nth-child(2),
-        .fiksi-table td:nth-child(2) { width: 90px; }
+        .fiksi-table td:nth-child(2) { width: 72px; text-align: center; }
 
         .fiksi-table th:nth-child(3),
-        .fiksi-table td:nth-child(3) { width: 20%; }
+        .fiksi-table td:nth-child(3) { width: 28%; }
 
         .fiksi-table th:nth-child(4),
-        .fiksi-table td:nth-child(4) { width: 12%; }
+        .fiksi-table td:nth-child(4) { width: 110px; }
 
         .fiksi-table th:nth-child(5),
-        .fiksi-table td:nth-child(5) { width: 13%; }
+        .fiksi-table td:nth-child(5) { width: 22%; }
 
         .fiksi-table th:nth-child(6),
-        .fiksi-table td:nth-child(6) { width: 96px; }
+        .fiksi-table td:nth-child(6) { width: 98px; text-align: center; }
 
         .fiksi-table th:nth-child(7),
-        .fiksi-table td:nth-child(7) { width: 18%; }
-
-        .fiksi-table th:nth-child(8),
-        .fiksi-table td:nth-child(8) { width: 98px; text-align: center; }
-
-        .fiksi-table th:nth-child(9),
-        .fiksi-table td:nth-child(9) { width: 128px; }
+        .fiksi-table td:nth-child(7) { width: 128px; }
 
         .fiksi-table td:nth-child(3),
-        .fiksi-table td:nth-child(4),
-        .fiksi-table td:nth-child(5),
-        .fiksi-table td:nth-child(7) {
+        .fiksi-table td:nth-child(5) {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .cover-thumb {
+            width: 44px;
+            height: 58px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--color-gray);
+            background: #F3F4F6;
+        }
+
+        .cover-thumb-placeholder {
+            width: 44px;
+            height: 58px;
+            border-radius: 8px;
+            border: 1px dashed var(--color-gray);
+            background: #F9FAFB;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-light);
+        }
+
+        .cover-thumb-placeholder i {
+            width: 18px;
+            height: 18px;
         }
         
         .fiksi-table tbody tr {
@@ -547,7 +565,7 @@
                                 name="search"
                                 value="{{ $search }}"
                                 class="search-input"
-                                placeholder="Cari fiksi berdasarkan ID, judul, penulis, kategori, tahun, atau pembuat..."
+                                placeholder="Cari fiksi berdasarkan ID, judul, atau pembuat..."
                                 aria-label="Cari fiksi"
                             >
                         </div>
@@ -561,7 +579,7 @@
                                 <span>Reset</span>
                             </a>
                         @endif
-                        <div class="search-note">Gunakan kata kunci seperti ID fiksi, judul buku, penulis, kategori, tahun terbit, nama pembuat, atau email pembuat.</div>
+                        <div class="search-note">Gunakan kata kunci seperti ID fiksi, judul buku, nama pembuat, atau email pembuat.</div>
                     </form>
                 </div>
 
@@ -581,11 +599,9 @@
                             <thead>
                                 <tr>
                                     <th>No.</th>
-                                    <th>Tanggal</th>
+                                    <th>Cover</th>
                                     <th>Judul Buku</th>
-                                    <th>Penulis</th>
-                                    <th>Kategori</th>
-                                    <th>Tahun Terbit</th>
+                                    <th>Tanggal</th>
                                     <th>File</th>
                                     <th>Status</th>
                                     <th>Aksi</th>
@@ -595,11 +611,15 @@
                                 @foreach($fiksi as $index => $item)
                                     <tr>
                                         <td>{{ $fiksi->firstItem() + $index }}</td>
-                                        <td>{{ $item->created_at->format('d M Y') }}</td>
+                                        <td>
+                                            @if($item->cover_path)
+                                                <img src="{{ Storage::url($item->cover_path) }}" alt="Cover {{ $item->judul_buku }}" class="cover-thumb">
+                                            @else
+                                                <span class="cover-thumb-placeholder"><i data-lucide="book"></i></span>
+                                            @endif
+                                        </td>
                                         <td>{{ $item->judul_buku }}</td>
-                                        <td>{{ $item->penulis }}</td>
-                                        <td>{{ $item->kategori ?? '-' }}</td>
-                                        <td>{{ $item->tahun_terbit ?? '-' }}</td>
+                                        <td>{{ $item->created_at->format('d M Y') }}</td>
                                         <td>
                                             @if($item->file_path)
                                                 <a href="{{ Storage::url($item->file_path) }}" class="file-link" target="_blank">

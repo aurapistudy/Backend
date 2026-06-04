@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Fiksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Fiksi;
 use Illuminate\Support\Facades\Storage;
 
 class FiksiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $search = trim((string) $request->get('search', ''));
@@ -21,10 +18,6 @@ class FiksiController extends Controller
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
                         ->orWhere('judul_buku', 'like', "%{$search}%")
-                        ->orWhere('penulis', 'like', "%{$search}%")
-                        ->orWhere('kategori', 'like', "%{$search}%")
-                        ->orWhere('tahun_terbit', 'like', "%{$search}%")
-                        ->orWhere('deskripsi', 'like', "%{$search}%")
                         ->orWhereHas('pengguna', function ($penggunaQuery) use ($search) {
                             $penggunaQuery->where('nama', 'like', "%{$search}%")
                                 ->orWhere('email', 'like', "%{$search}%");
@@ -42,48 +35,44 @@ class FiksiController extends Controller
         return view('dashboard.fiksi.fiksi', compact('fiksi', 'search'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('dashboard.fiksi.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'judul_buku' => 'required|string|max:200',
-            'penulis' => 'required|string|max:150',
-            'kategori' => 'nullable|string|max:100',
-            'tahun_terbit' => 'nullable|integer|min:1900|max:' . date('Y'),
-            'deskripsi' => 'nullable|string',
-            'file_path' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-            'jumlah_halaman' => 'nullable|integer|min:1',
+            'cover_path' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'file_path' => 'required|file|mimes:pdf,doc,docx|max:10240',
             'status_aktif' => 'boolean',
         ], [
             'judul_buku.required' => 'Judul buku wajib diisi',
-            'penulis.required' => 'Penulis wajib diisi',
-            'file_path.file' => 'File buku tidak valid. Pilih file PDF, DOC, atau DOCX.',
-            'file_path.mimes' => 'Format file buku harus PDF, DOC, atau DOCX.',
-            'file_path.max' => 'Ukuran file buku terlalu besar. Maksimal 10 MB. Silakan kompres atau pilih file yang lebih kecil.',
-            'jumlah_halaman.integer' => 'Jumlah halaman harus berupa angka.',
-            'jumlah_halaman.min' => 'Jumlah halaman minimal 1.',
+            'cover_path.image' => 'Cover harus berupa gambar.',
+            'cover_path.mimes' => 'Format cover harus JPG, JPEG, PNG, atau WEBP.',
+            'cover_path.max' => 'Ukuran cover terlalu besar. Maksimal 5 MB.',
+            'file_path.required' => 'File fiksi wajib diunggah.',
+            'file_path.file' => 'File fiksi tidak valid. Pilih file PDF, DOC, atau DOCX.',
+            'file_path.mimes' => 'Format file fiksi harus PDF, DOC, atau DOCX.',
+            'file_path.max' => 'Ukuran file fiksi terlalu besar. Maksimal 10 MB.',
         ]);
 
-        // Handle file upload
+        if ($request->hasFile('cover_path')) {
+            $cover = $request->file('cover_path');
+            $coverName = time() . '_cover_' . $cover->getClientOriginalName();
+            $validated['cover_path'] = $cover->storeAs('fiksi/covers', $coverName, 'public');
+        }
+
         if ($request->hasFile('file_path')) {
             $file = $request->file('file_path');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('fiksi', $fileName, 'public');
-            $validated['file_path'] = $filePath;
+            $validated['file_path'] = $file->storeAs('fiksi', $fileName, 'public');
         }
 
         $validated['dibuat_oleh'] = Auth::id();
-        $validated['status_aktif'] = $request->has('status_aktif') ? true : false;
+        $validated['status_aktif'] = $request->has('status_aktif');
+        $validated['penulis'] = '';
 
         $fiksi = Fiksi::create($validated);
 
@@ -95,9 +84,6 @@ class FiksiController extends Controller
             ->with('success', 'Fiksi berhasil ditambahkan!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $fiksi = Fiksi::with('pengguna')->findOrFail($id);
@@ -109,58 +95,57 @@ class FiksiController extends Controller
         return view('dashboard.fiksi.show', compact('fiksi'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $fiksi = Fiksi::findOrFail($id);
+
         return view('dashboard.fiksi.edit', compact('fiksi'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $fiksi = Fiksi::findOrFail($id);
 
         $validated = $request->validate([
             'judul_buku' => 'required|string|max:200',
-            'penulis' => 'required|string|max:150',
-            'kategori' => 'nullable|string|max:100',
-            'tahun_terbit' => 'nullable|integer|min:1900|max:' . date('Y'),
-            'deskripsi' => 'nullable|string',
+            'cover_path' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'file_path' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-            'jumlah_halaman' => 'nullable|integer|min:1',
             'status_aktif' => 'boolean',
         ], [
             'judul_buku.required' => 'Judul buku wajib diisi',
-            'penulis.required' => 'Penulis wajib diisi',
-            'file_path.file' => 'File buku tidak valid. Pilih file PDF, DOC, atau DOCX.',
-            'file_path.mimes' => 'Format file buku harus PDF, DOC, atau DOCX.',
-            'file_path.max' => 'Ukuran file buku terlalu besar. Maksimal 10 MB. Silakan kompres atau pilih file yang lebih kecil.',
-            'jumlah_halaman.integer' => 'Jumlah halaman harus berupa angka.',
-            'jumlah_halaman.min' => 'Jumlah halaman minimal 1.',
+            'cover_path.image' => 'Cover harus berupa gambar.',
+            'cover_path.mimes' => 'Format cover harus JPG, JPEG, PNG, atau WEBP.',
+            'cover_path.max' => 'Ukuran cover terlalu besar. Maksimal 5 MB.',
+            'file_path.file' => 'File fiksi tidak valid. Pilih file PDF, DOC, atau DOCX.',
+            'file_path.mimes' => 'Format file fiksi harus PDF, DOC, atau DOCX.',
+            'file_path.max' => 'Ukuran file fiksi terlalu besar. Maksimal 10 MB.',
         ]);
 
-        // Handle file upload if new file is provided
+        if ($request->hasFile('cover_path')) {
+            if ($fiksi->cover_path && Storage::disk('public')->exists($fiksi->cover_path)) {
+                Storage::disk('public')->delete($fiksi->cover_path);
+            }
+
+            $cover = $request->file('cover_path');
+            $coverName = time() . '_cover_' . $cover->getClientOriginalName();
+            $validated['cover_path'] = $cover->storeAs('fiksi/covers', $coverName, 'public');
+        } else {
+            $validated['cover_path'] = $fiksi->cover_path;
+        }
+
         if ($request->hasFile('file_path')) {
-            // Delete old file if exists
             if ($fiksi->file_path && Storage::disk('public')->exists($fiksi->file_path)) {
                 Storage::disk('public')->delete($fiksi->file_path);
             }
 
             $file = $request->file('file_path');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('fiksi', $fileName, 'public');
-            $validated['file_path'] = $filePath;
+            $validated['file_path'] = $file->storeAs('fiksi', $fileName, 'public');
         } else {
-            // Keep existing file if not uploading new one
             $validated['file_path'] = $fiksi->file_path;
         }
 
-        $validated['status_aktif'] = $request->has('status_aktif') ? true : false;
+        $validated['status_aktif'] = $request->has('status_aktif');
 
         $fiksi->update($validated);
 
@@ -172,14 +157,14 @@ class FiksiController extends Controller
             ->with('success', 'Fiksi berhasil diperbarui!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $fiksi = Fiksi::findOrFail($id);
 
-        // Delete file if exists
+        if ($fiksi->cover_path && Storage::disk('public')->exists($fiksi->cover_path)) {
+            Storage::disk('public')->delete($fiksi->cover_path);
+        }
+
         if ($fiksi->file_path && Storage::disk('public')->exists($fiksi->file_path)) {
             Storage::disk('public')->delete($fiksi->file_path);
         }

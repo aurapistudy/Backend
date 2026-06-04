@@ -248,6 +248,40 @@
             font-weight: 600;
             color: var(--color-text);
         }
+
+        .detail-cover {
+            width: 160px;
+            height: 220px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 2px solid var(--color-gray);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            flex-shrink: 0;
+        }
+
+        .detail-cover-placeholder {
+            width: 160px;
+            height: 220px;
+            border-radius: 14px;
+            border: 2px dashed var(--color-gray);
+            background: #F9FAFB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-light);
+            flex-shrink: 0;
+        }
+
+        .detail-cover-placeholder i {
+            width: 36px;
+            height: 36px;
+        }
+
+        .detail-header-main {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
         </style>
 </head>
 <body>
@@ -274,24 +308,21 @@
                 <div class="detail-container">
                     <!-- Header -->
                     <div class="detail-header">
-                        <div style="flex: 1;">
-                            <h2 class="detail-title">{{ $fiksi->judul_buku }}</h2>
-                            <div class="detail-meta">
-                                <span class="meta-badge {{ $fiksi->status_aktif ? 'badge-success' : 'badge-danger' }}">
-                                    {{ $fiksi->status_aktif ? 'Aktif' : 'Nonaktif' }}
-                                </span>
-                                @if($fiksi->penulis)
-                                    <span class="meta-item"><i data-lucide="pen-line"></i> {{ $fiksi->penulis }}</span>
-                                @endif
-                                @if($fiksi->kategori)
-                                    <span class="meta-item"><i data-lucide="bookmark"></i> {{ $fiksi->kategori }}</span>
-                                @endif
-                                @if($fiksi->tahun_terbit)
-                                    <span class="meta-item"><i data-lucide="calendar"></i> {{ $fiksi->tahun_terbit }}</span>
-                                @endif
-                                @if($fiksi->jumlah_halaman)
-                                    <span class="meta-item"><i data-lucide="file-text"></i> {{ $fiksi->jumlah_halaman }} halaman</span>
-                                @endif
+                        <div class="detail-header-main" style="flex: 1;">
+                            @if($fiksi->cover_path)
+                                <img src="{{ Storage::url($fiksi->cover_path) }}" alt="Cover {{ $fiksi->judul_buku }}" class="detail-cover">
+                            @else
+                                <div class="detail-cover-placeholder">
+                                    <i data-lucide="book"></i>
+                                </div>
+                            @endif
+                            <div style="flex: 1;">
+                                <h2 class="detail-title">{{ $fiksi->judul_buku }}</h2>
+                                <div class="detail-meta">
+                                    <span class="meta-badge {{ $fiksi->status_aktif ? 'badge-success' : 'badge-danger' }}">
+                                        {{ $fiksi->status_aktif ? 'Aktif' : 'Nonaktif' }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -320,14 +351,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Deskripsi -->
-                    @if($fiksi->deskripsi)
-                        <div class="content-section">
-                            <h3 class="section-title">Deskripsi</h3>
-                            <div class="section-content">{{ $fiksi->deskripsi }}</div>
-                        </div>
-                    @endif
 
                     <!-- File -->
                     @if($fiksi->file_path)

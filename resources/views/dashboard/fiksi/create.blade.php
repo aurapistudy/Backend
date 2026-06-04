@@ -205,6 +205,38 @@
             margin-top: 0.35rem;
             display: block;
         }
+
+        .cover-preview {
+            width: 140px;
+            height: 190px;
+            border-radius: 12px;
+            border: 2px dashed var(--color-gray);
+            background: #F9FAFB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+
+        .cover-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cover-preview-placeholder {
+            text-align: center;
+            color: var(--color-text-light);
+            font-size: 0.82rem;
+            padding: 0.75rem;
+        }
+
+        .cover-preview-placeholder i {
+            width: 28px;
+            height: 28px;
+            margin-bottom: 0.35rem;
+        }
         </style>
 </head>
 <body>
@@ -241,8 +273,8 @@
 
                 <form action="{{ route('fiksi.store') }}" method="POST" enctype="multipart/form-data" class="form-container">
                     @csrf
-                    <div class="section-title"><i data-lucide="file-text"></i> Informasi Utama</div>
-                    <div class="section-subtitle">Masukkan judul, penulis, dan deskripsi fiksi.</div>
+                    <div class="section-title"><i data-lucide="book-open"></i> Informasi Fiksi</div>
+                    <div class="section-subtitle">Isi judul, cover, dan file cerita fiksi.</div>
 
                     <div class="form-group">
                         <label class="form-label">
@@ -256,60 +288,27 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label">Cover Buku</label>
+                        <input type="file" name="cover_path" id="cover_path" accept=".jpg,.jpeg,.png,.webp" class="form-input">
+                        <span class="hint">JPG, PNG, atau WEBP. Maksimal 5 MB. Cover tampil di daftar fiksi.</span>
+                        <div class="cover-preview" id="cover_preview">
+                            <div class="cover-preview-placeholder">
+                                <i data-lucide="image"></i>
+                                <div>Preview cover</div>
+                            </div>
+                        </div>
+                        @error('cover_path')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">
-                            Penulis <span class="required">*</span>
+                            File Cerita <span class="required">*</span>
                         </label>
-                        <input type="text" name="penulis" value="{{ old('penulis') }}" class="form-input" required>
-                        @error('penulis')
-                            <span class="error-message">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Kategori</label>
-                            <input type="text" name="kategori" value="{{ old('kategori') }}" placeholder="misal: Cerita Rakyat, Dongeng" class="form-input">
-                            @error('kategori')
-                                <span class="error-message">{{ $message }}</span>
-                            @enderror
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tahun Terbit</label>
-                            <input type="number" name="tahun_terbit" value="{{ old('tahun_terbit') }}" min="1900" max="{{ date('Y') }}" placeholder="misal: 2024" class="form-input">
-                            @error('tahun_terbit')
-                                <span class="error-message">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="section-title" style="margin-top: 1.5rem;"><i data-lucide="paperclip"></i> File Fiksi</div>
-                    <div class="section-subtitle">Unggah file fiksi yang dapat dibaca siswa.</div>
-
-                    <div class="form-group">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea name="deskripsi" rows="4" class="form-textarea">{{ old('deskripsi') }}</textarea>
-                        @error('deskripsi')
-                            <span class="error-message">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">File (PDF, DOC, DOCX)</label>
-                        <input type="file" name="file_path" accept=".pdf,.doc,.docx" class="form-input">
-                        <small class="hint">Maksimal 10MB</small>
+                        <input type="file" name="file_path" accept=".pdf,.doc,.docx" class="form-input" required>
+                        <span class="hint">PDF, DOC, atau DOCX. Maksimal 10 MB.</span>
                         @error('file_path')
-                            <span class="error-message">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="section-title" style="margin-top: 1.5rem;"><i data-lucide="settings"></i> Pengaturan</div>
-                    <div class="section-subtitle">Atur detail tambahan dan status fiksi.</div>
-
-                    <div class="form-group">
-                        <label class="form-label">Jumlah Halaman</label>
-                        <input type="number" name="jumlah_halaman" value="{{ old('jumlah_halaman') }}" min="1" class="form-input">
-                        <span class="hint">Isi jika file berupa dokumen.</span>
-                        @error('jumlah_halaman')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
@@ -359,6 +358,26 @@
     </script>
     <script>
     lucide.createIcons();
+
+    const coverInput = document.getElementById('cover_path');
+    const coverPreview = document.getElementById('cover_preview');
+
+    if (coverInput && coverPreview) {
+        coverInput.addEventListener('change', function () {
+            const file = coverInput.files && coverInput.files[0];
+            if (!file) {
+                coverPreview.innerHTML = '<div class="cover-preview-placeholder"><i data-lucide="image"></i><div>Preview cover</div></div>';
+                lucide.createIcons();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                coverPreview.innerHTML = '<img src="' + event.target.result + '" alt="Preview cover">';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 </script>
 </body>
 </html>
