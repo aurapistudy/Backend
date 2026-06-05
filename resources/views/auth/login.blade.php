@@ -87,6 +87,18 @@
             position: absolute;
             z-index: 1;
         }
+
+        .logo-section img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto 1rem;
+            background: #FFFFFF;
+            padding: 6px;
+            box-shadow: 0 10px 30px rgba(248, 184, 3, 0.25);
+        }
         
         
         .login-label {
