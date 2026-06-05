@@ -29,8 +29,9 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
             background: linear-gradient(
                 180deg,
                 var(--color-yellow-light) 0%,
@@ -54,52 +55,21 @@
             z-index: 10;
         }
         
-        .logo-section {
+        .auth-brand {
             text-align: center;
-            margin-bottom: 0.6rem;
+            margin-bottom: 1.25rem;
             animation: fadeInDown 0.6s ease-out;
         }
-        
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1rem;
-            background: linear-gradient(135deg, var(--color-orange) 0%, var(--color-yellow-primary) 100%);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(248, 184, 3, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .logo-icon::before {
-            content: '👋';
-            font-size: 3rem;
-            z-index: 2;
-        }
-        
-        /* Hand icon SVG fallback */
-        .logo-icon svg {
-            width: 60px;
-            height: 60px;
-            position: absolute;
-            z-index: 1;
-        }
 
-        .logo-section img {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            object-fit: cover;
+        .auth-brand-logo {
+            width: auto;
+            height: 88px;
+            max-width: 168px;
+            object-fit: contain;
             display: block;
             margin: 0 auto 1rem;
-            background: #FFFFFF;
-            padding: 6px;
-            box-shadow: 0 10px 30px rgba(248, 184, 3, 0.25);
+            filter: drop-shadow(0 8px 18px rgba(248, 184, 3, 0.25));
         }
-        
         
         .login-label {
             font-size: 1.25rem;
@@ -124,12 +94,13 @@
         .login-card {
             background: #FFFFFF;
             border-radius: 24px;
-            padding: 1.5rem 2rem;
+            padding: 2rem 2rem 1.5rem;
             width: 100%;
             max-width: 450px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
             animation: fadeInUp 0.6s ease-out 0.2s both;
             position: relative;
+            overflow: visible;
         }
         
         .form-group {
@@ -344,13 +315,9 @@
             }
 
             
-            .logo-text {
-                font-size: 2.5rem;
-            }
-            
-            .logo-icon {
-                width: 70px;
-                height: 70px;
+            .auth-brand-logo {
+                height: 76px;
+                max-width: 148px;
             }
         }
 
@@ -402,15 +369,9 @@
     <div class="decoration-circle decoration-circle-2"></div>
     
     <div class="login-container">
-       <!-- Logo Section -->
-<div class="logo-section">
-    <x-auth-brand />
-
-</div>
-
-        
-        <!-- Login Card -->
         <div class="login-card">
+            <x-auth-brand />
+
             @if ($errors->any())
                 <div style="background: #fee; border: 2px solid #fcc; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; color: #c33;">
                     <strong>Login Gagal!</strong>

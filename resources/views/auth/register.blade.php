@@ -63,10 +63,21 @@
             gap: 0.5rem;
         }
 
-        .logo-section {
+        .logo-section,
+        .auth-brand {
             text-align: center;
             margin-bottom: 0.6rem;
             animation: fadeInDown 0.6s ease-out;
+        }
+
+        .auth-brand-logo {
+            width: auto;
+            height: 88px;
+            max-width: 168px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 1rem;
+            filter: drop-shadow(0 8px 18px rgba(248, 184, 3, 0.25));
         }
 
         .logo-icon {
