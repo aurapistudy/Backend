@@ -241,24 +241,6 @@
             z-index: 1;
         }
         
-        .footer-strip {
-            background: var(--color-yellow-primary);
-            width: 100%;
-            padding: 0.6rem 2rem;
-            display: flex;
-            align-items: center;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-}
-
-        .footer-icon {
-            width: 24px;
-            height: 24px;
-            opacity: 0.3;
-            color: white;
-        }
-        
         @keyframes fadeInDown {
             from {
                 opacity: 0;
@@ -454,19 +436,7 @@
             </form>
         </div>
     </div>
-    
-    <!-- Footer Strip -->
-    <div class="footer-strip">
-        <!-- House icon - Place your icon here: public/images/icons/house-icon.svg -->
-        <svg class="footer-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" 
-                  stroke="currentColor" 
-                  stroke-width="2" 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round"/>
-        </svg>
-    </div>
-    
+
     <style>
         .error-input {
             border-color: #f33 !important;
