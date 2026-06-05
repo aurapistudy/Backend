@@ -45,9 +45,13 @@
             <div class="content-area">
                 <nav class="breadcrumb" aria-label="Navigasi">
                     <a href="{{ route('kuis.hasil.index') }}">Hasil Kuis</a>
+                    @if($hasil->kuis)
+                        <span>/</span>
+                        <a href="{{ route('kuis.hasil.kuis', $hasil->kuis_id) }}">{{ $hasil->kuis->judul }}</a>
+                    @endif
                     @if($hasil->pengguna)
                         <span>/</span>
-                        <a href="{{ route('kuis.hasil.siswa', $hasil->pengguna_id) }}">{{ $hasil->pengguna->nama }}</a>
+                        <span>{{ $hasil->pengguna->nama }}</span>
                     @endif
                     <span>/</span>
                     <span>Koreksi</span>
@@ -144,8 +148,8 @@
                             <i data-lucide="save"></i>
                             Simpan Koreksi
                         </button>
-                        @if($hasil->pengguna_id)
-                            <a class="btn btn-secondary" href="{{ route('kuis.hasil.siswa', $hasil->pengguna_id) }}">Kembali ke Hasil Siswa</a>
+                        @if($hasil->kuis_id)
+                            <a class="btn btn-secondary" href="{{ route('kuis.hasil.kuis', $hasil->kuis_id) }}">Kembali ke Daftar Siswa</a>
                         @else
                             <a class="btn btn-secondary" href="{{ route('kuis.hasil.index') }}">Kembali</a>
                         @endif

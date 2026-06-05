@@ -6,7 +6,6 @@ use App\Http\Controllers\Concerns\FiltersByAssignedMapel;
 use App\Exceptions\GeminiCoverException;
 use App\Models\Kuis;
 use App\Models\KuisHasil;
-use App\Models\Pengguna;
 use App\Models\KuisJawaban;
 use App\Models\KuisPertanyaan;
 use App\Models\KuisOpsi;
@@ -187,89 +186,105 @@ class KuisController extends Controller
     public function hasilIndex(Request $request)
     {
         $search = trim((string) $request->get('search', ''));
+        $sort = (string) $request->get('sort', 'terakhir');
 
-        $siswa = Pengguna::query()
-            ->where('peran', 'siswa')
-            ->whereHas('kuisHasil', function ($hasilQuery) {
+        $kuisList = $this->applyMapelFilterToKuis(Kuis::query())
+            ->with('materi')
+            ->whereHas('hasil', function ($hasilQuery) {
                 $this->applyMapelFilterToKuisHasil($hasilQuery);
             })
-            ->with(['siswa.level'])
-            ->withCount(['kuisHasil as total_hasil' => function ($query) {
+            ->withCount(['hasil as total_pengerjaan' => function ($query) {
                 $this->applyMapelFilterToKuisHasil($query);
             }])
-            ->withCount(['kuisHasil as kuis_unik_count' => function ($query) {
+            ->withCount(['hasil as siswa_unik_count' => function ($query) {
                 $this->applyMapelFilterToKuisHasil($query);
-                $query->select(DB::raw('count(distinct kuis_id)'));
+                $query->select(DB::raw('count(distinct pengguna_id)'));
             }])
-            ->withCount(['kuisHasil as perlu_koreksi_count' => function ($query) {
+            ->withCount(['hasil as perlu_koreksi_count' => function ($query) {
                 $query->whereHas('jawaban', function ($jawabanQuery) {
                     $jawabanQuery->where('status_koreksi', 'pending');
                 });
                 $this->applyMapelFilterToKuisHasil($query);
             }])
-            ->withMax(['kuisHasil as terakhir_selesai' => function ($query) {
+            ->withMax(['hasil as terakhir_selesai' => function ($query) {
                 $this->applyMapelFilterToKuisHasil($query);
             }], 'selesai_at')
-            ->withAvg(['kuisHasil as rata_skor' => function ($query) {
+            ->withAvg(['hasil as rata_skor' => function ($query) {
                 $this->applyMapelFilterToKuisHasil($query);
             }], 'skor')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
-                    $inner->where('nama', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhereHas('siswa.level', function ($levelQuery) use ($search) {
-                            $levelQuery->where('nama', 'like', "%{$search}%");
+                    $inner->where('id', 'like', "%{$search}%")
+                        ->orWhere('judul', 'like', "%{$search}%")
+                        ->orWhereHas('materi', function ($materiQuery) use ($search) {
+                            $materiQuery->where('judul', 'like', "%{$search}%");
                         });
                 });
             })
-            ->orderByDesc('terakhir_selesai')
+            ->when($sort === 'peserta', fn ($query) => $query->orderByDesc('siswa_unik_count'))
+            ->when($sort === 'skor_tinggi', fn ($query) => $query->orderByDesc('rata_skor'))
+            ->when($sort === 'skor_rendah', fn ($query) => $query->orderBy('rata_skor'))
+            ->when($sort === 'judul', fn ($query) => $query->orderBy('judul'))
+            ->when($sort === 'terakhir' || !in_array($sort, ['peserta', 'skor_tinggi', 'skor_rendah', 'judul'], true), fn ($query) => $query->orderByDesc('terakhir_selesai'))
             ->paginate(10)
             ->withQueryString();
 
-        return view('dashboard.kuis.hasil', compact('siswa', 'search'));
+        return view('dashboard.kuis.hasil', compact('kuisList', 'search', 'sort'));
     }
 
-    public function hasilSiswa(Request $request, Pengguna $pengguna)
+    public function hasilKuis(Request $request, Kuis $kuis)
     {
-        abort_unless($pengguna->peran === 'siswa', 404);
+        $this->authorizeKuisAccess($kuis);
+        $kuis->load('materi');
 
         $search = trim((string) $request->get('search', ''));
+        $sort = (string) $request->get('sort', 'skor_desc');
 
-        $hasil = $this->applyMapelFilterToKuisHasil(
+        $hasilQuery = $this->applyMapelFilterToKuisHasil(
             KuisHasil::query()
-                ->with(['kuis.materi'])
+                ->with(['pengguna.siswa.level'])
                 ->withPendingFlag()
-                ->where('pengguna_id', $pengguna->id)
-        )
+                ->where('kuis_id', $kuis->id)
+        );
+
+        $hasil = (clone $hasilQuery)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('id', 'like', "%{$search}%")
                         ->orWhere('skor', 'like', "%{$search}%")
                         ->orWhere('total_benar', 'like', "%{$search}%")
                         ->orWhere('total_pertanyaan', 'like', "%{$search}%")
-                        ->orWhereHas('kuis', function ($kuisQuery) use ($search) {
-                            $kuisQuery->where('judul', 'like', "%{$search}%")
-                                ->orWhereHas('materi', function ($materiQuery) use ($search) {
-                                    $materiQuery->where('judul', 'like', "%{$search}%");
+                        ->orWhereHas('pengguna', function ($penggunaQuery) use ($search) {
+                            $penggunaQuery->where('nama', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhereHas('siswa.level', function ($levelQuery) use ($search) {
+                                    $levelQuery->where('nama', 'like', "%{$search}%");
                                 });
                         });
                 });
             })
-            ->orderByDesc('selesai_at')
+            ->when($sort === 'skor_asc', fn ($query) => $query->orderBy('skor')->orderByDesc('selesai_at'))
+            ->when($sort === 'terbaru', fn ($query) => $query->orderByDesc('selesai_at'))
+            ->when($sort === 'terlama', fn ($query) => $query->orderBy('selesai_at'))
+            ->when($sort === 'nama', function ($query) {
+                $query->join('pengguna', 'pengguna.id', '=', 'kuis_hasil.pengguna_id')
+                    ->orderBy('pengguna.nama')
+                    ->select('kuis_hasil.*');
+            })
+            ->when($sort === 'skor_desc' || !in_array($sort, ['skor_asc', 'terbaru', 'terlama', 'nama'], true), fn ($query) => $query->orderByDesc('skor')->orderByDesc('selesai_at'))
             ->paginate(10)
             ->withQueryString();
 
-        $pengguna->load('siswa.level');
-
-        $hasilQuery = $this->applyMapelFilterToKuisHasil(
-            KuisHasil::query()->where('pengguna_id', $pengguna->id)
-        );
         $ringkasan = [
-            'total_hasil' => (clone $hasilQuery)->count(),
-            'kuis_unik' => (clone $hasilQuery)->distinct()->count('kuis_id'),
+            'total_pengerjaan' => (clone $hasilQuery)->count(),
+            'siswa_unik' => (clone $hasilQuery)->distinct()->count('pengguna_id'),
+            'rata_skor' => (clone $hasilQuery)->avg('skor'),
+            'perlu_koreksi' => (clone $hasilQuery)->whereHas('jawaban', function ($jawabanQuery) {
+                $jawabanQuery->where('status_koreksi', 'pending');
+            })->count(),
         ];
 
-        return view('dashboard.kuis.hasil-siswa', compact('pengguna', 'hasil', 'search', 'ringkasan'));
+        return view('dashboard.kuis.hasil-kuis', compact('kuis', 'hasil', 'search', 'sort', 'ringkasan'));
     }
 
     public function hasilShow(KuisHasil $hasil)
