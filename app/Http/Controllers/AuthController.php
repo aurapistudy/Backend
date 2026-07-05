@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\PasswordResetMail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use App\Models\Pengguna;
@@ -55,15 +57,23 @@ class AuthController extends Controller
             'kata_sandi.required' => 'Kata sandi wajib diisi',
         ]);
 
-        $pengguna = Pengguna::where('email', $request->email)->first();
+        // Server-side throttle key per IP+email to mitigate brute-force
+        $throttleKey = 'login|' . $request->ip() . '|' . strtolower($request->input('email', ''));
+        $maxAttempts = 10;
+        $decaySeconds = 60; // lock window
 
-        if (!$pengguna) {
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $available = RateLimiter::availableIn($throttleKey);
             return back()->withErrors([
-                'email' => 'Email atau kata sandi salah.',
+                'email' => "Terlalu banyak percobaan login. Coba lagi dalam {$available} detik.",
             ])->withInput($request->only('email'));
         }
 
-        if (!Hash::check($request->kata_sandi, $pengguna->kata_sandi)) {
+        $pengguna = Pengguna::where('email', $request->email)->first();
+
+        if (!$pengguna || !Hash::check($request->kata_sandi, $pengguna->kata_sandi)) {
+            // record failed attempt
+            RateLimiter::hit($throttleKey, $decaySeconds);
             return back()->withErrors([
                 'email' => 'Email atau kata sandi salah.',
             ])->withInput($request->only('email'));
@@ -75,7 +85,8 @@ class AuthController extends Controller
             ])->withInput($request->only('email'));
         }
 
-        // Login user
+        // Clear throttle on successful login and login user
+        RateLimiter::clear($throttleKey);
         Auth::login($pengguna, $request->boolean('ingat_sandi'));
 
         $request->session()->regenerate();
@@ -101,7 +112,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Send a password reset link to the given email.
+     * Send a verification code to the given email.
      */
     public function sendResetLink(Request $request)
     {
@@ -111,74 +122,132 @@ class AuthController extends Controller
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
         ]);
-
         $pengguna = Pengguna::where('email', $validated['email'])->first();
+
+        $throttleKey = 'pwdreset|' . $request->ip() . '|' . strtolower($validated['email']);
+        $maxAttempts = 5;
+        $decaySeconds = 60 * 60;
+
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $available = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors([
+                'email' => "Terlalu banyak permintaan reset. Coba lagi dalam {$available} detik.",
+            ])->withInput();
+        }
 
         if ($pengguna) {
             $reset = $this->createPasswordResetForUser($pengguna);
 
             try {
-                $this->sendPasswordResetEmail($pengguna, $reset['reset_url']);
+                $this->sendPasswordResetEmail($pengguna, $reset['plain_code']);
             } catch (\Throwable $exception) {
                 Log::error('password_reset_mail_failed', [
                     'email' => $pengguna->email,
                     'error' => $exception->getMessage(),
                 ]);
 
+                RateLimiter::hit($throttleKey, $decaySeconds);
+
                 return back()
                     ->withInput()
-                    ->with('status', 'Tautan reset sudah dibuat. Mail server belum aktif, gunakan tautan fallback di bawah.')
-                    ->with('reset_link_fallback', $reset['reset_url']);
+                    ->with('status', 'Kode verifikasi sudah dibuat. Mail server belum aktif, gunakan kode yang ada di log server jika diperlukan.');
             }
+
+            RateLimiter::hit($throttleKey, $decaySeconds);
         }
 
-        return back()->with('status', 'Jika email terdaftar, tautan reset kata sandi telah dikirim.');
+        return redirect()->route('password.verify')
+            ->with('status', 'Jika email terdaftar, kode verifikasi 6 digit telah dikirim.')
+            ->with('reset_email', $validated['email']);
     }
 
     /**
-     * Show the reset password form for a valid token.
+     * Show the verification-code form.
      */
-    public function showResetPasswordForm(Request $request, string $token)
+    public function showVerifyResetCodeForm(Request $request)
     {
-        $email = (string) $request->query('email', '');
-
-        if (!$this->hasValidResetToken($email, $token)) {
-            return redirect()->route('password.request')
-                ->withErrors([
-                    'email' => 'Tautan reset kata sandi tidak valid atau sudah kedaluwarsa.',
-                ]);
-        }
-
-        return view('auth.reset-password', [
-            'token' => $token,
-            'email' => $email,
+        return view('auth.verify-reset-code', [
+            'email' => (string) $request->query('email', session('reset_email', '')),
         ]);
     }
 
     /**
-     * Update the user's password using a reset token.
+     * Verify the reset code sent by email.
+     */
+    public function verifyResetCode(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|digits:6',
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'code.required' => 'Kode verifikasi wajib diisi',
+            'code.digits' => 'Kode verifikasi harus 6 digit angka',
+        ]);
+
+        if (!$this->hasValidResetCode($validated['email'], $validated['code'])) {
+            throw ValidationException::withMessages([
+                'code' => 'Kode verifikasi tidak valid atau sudah kedaluwarsa.',
+            ]);
+        }
+
+        return redirect()->route('password.reset', [
+            'email' => $validated['email'],
+            'code' => $validated['code'],
+        ])->with('status', 'Kode verifikasi benar. Silakan buat kata sandi baru.');
+    }
+
+    /**
+     * Show the reset password form after the code has been verified.
+     */
+    public function showResetPasswordForm(Request $request)
+    {
+        $email = (string) $request->query('email', '');
+        $code = (string) $request->query('code', '');
+
+        if ($email === '' || $code === '' || !$this->hasValidResetCode($email, $code)) {
+            return redirect()->route('password.verify')
+                ->withErrors([
+                    'email' => 'Silakan verifikasi kode terlebih dahulu.',
+                ]);
+        }
+
+        return view('auth.reset-password', [
+            'email' => $email,
+            'code' => $code,
+        ]);
+    }
+
+    /**
+     * Update the user's password using the verified reset code.
      */
     public function resetPassword(Request $request)
     {
         $validated = $request->validate([
-            'token' => 'required|string',
             'email' => 'required|email',
+            'code' => 'required|digits:6',
             'kata_sandi' => 'required|string|min:6|confirmed',
         ], [
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
+            'code.required' => 'Kode verifikasi wajib diisi',
+            'code.digits' => 'Kode verifikasi harus 6 digit angka',
             'kata_sandi.required' => 'Kata sandi baru wajib diisi',
             'kata_sandi.min' => 'Kata sandi baru minimal 6 karakter',
             'kata_sandi.confirmed' => 'Konfirmasi kata sandi tidak cocok',
         ]);
 
-        if (!$this->hasValidResetToken($validated['email'], $validated['token'])) {
+        $email = $validated['email'];
+        $code = (string) $validated['code'];
+
+        if (!$this->hasValidResetCode($email, $code)) {
             throw ValidationException::withMessages([
-                'email' => 'Tautan reset kata sandi tidak valid atau sudah kedaluwarsa.',
+                'code' => 'Kode verifikasi tidak valid atau sudah kedaluwarsa.',
             ]);
         }
 
-        $pengguna = Pengguna::where('email', $validated['email'])->first();
+        $pengguna = Pengguna::where('email', $email)->first();
 
         if (!$pengguna) {
             throw ValidationException::withMessages([
@@ -192,7 +261,7 @@ class AuthController extends Controller
         ])->save();
 
         $pengguna->tokens()->delete();
-        DB::table('password_reset_tokens')->where('email', $validated['email'])->delete();
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
 
         return redirect()->route('login')
             ->with('success', 'Kata sandi berhasil diubah. Silakan login dengan kata sandi baru.');
@@ -262,13 +331,28 @@ class AuthController extends Controller
             'kata_sandi.required' => 'Kata sandi wajib diisi',
         ])->validate();
 
+        // Server-side throttle per IP+email for API login
+        $throttleKey = 'api_login|' . $request->ip() . '|' . strtolower($validated['email']);
+        $maxAttempts = 10;
+        $decaySeconds = 60;
+
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $available = RateLimiter::availableIn($throttleKey);
+            return response()->json([
+                'message' => "Terlalu banyak percobaan login. Coba lagi dalam {$available} detik."
+            ], 429);
+        }
+
         $pengguna = Pengguna::where('email', $validated['email'])->first();
 
         if (!$pengguna || !Hash::check($validated['kata_sandi'], $pengguna->kata_sandi)) {
+            RateLimiter::hit($throttleKey, $decaySeconds);
             return response()->json([
                 'message' => 'Email atau kata sandi salah.'
             ], 401);
         }
+
+        RateLimiter::clear($throttleKey);
 
         if (!$pengguna->status_aktif) {
             return response()->json([
@@ -396,7 +480,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Kirim tautan reset kata sandi (API / Flutter).
+     * Kirim kode reset kata sandi (API / Flutter).
      */
     public function apiForgotPassword(Request $request): JsonResponse
     {
@@ -409,16 +493,29 @@ class AuthController extends Controller
 
         $pengguna = Pengguna::where('email', $validated['email'])->first();
 
+        $throttleKey = 'api_pwdreset|' . $request->ip() . '|' . strtolower($validated['email']);
+        $maxAttempts = 5;
+        $decaySeconds = 60 * 60;
+
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $available = RateLimiter::availableIn($throttleKey);
+            return response()->json([
+                'message' => "Terlalu banyak permintaan reset. Coba lagi dalam {$available} detik."
+            ], 429);
+        }
+
         if ($pengguna) {
             $reset = $this->createPasswordResetForUser($pengguna);
 
             try {
-                $this->sendPasswordResetEmail($pengguna, $reset['reset_url']);
+                $this->sendPasswordResetEmail($pengguna, $reset['plain_code']);
             } catch (\Throwable $exception) {
                 Log::error('password_reset_mail_failed', [
                     'email' => $pengguna->email,
                     'error' => $exception->getMessage(),
                 ]);
+
+                RateLimiter::hit($throttleKey, $decaySeconds);
 
                 $response = [
                     'message' => 'Gagal mengirim email reset kata sandi. Periksa konfigurasi mail server atau coba lagi nanti.',
@@ -426,29 +523,56 @@ class AuthController extends Controller
 
                 if (config('app.debug')) {
                     $response['debug'] = [
-                        'reset_url' => $reset['reset_url'],
-                        'token' => $reset['plain_token'],
+                        'code' => $reset['plain_code'],
                         'email' => $pengguna->email,
                     ];
                 }
 
                 return response()->json($response, 503);
             }
+
+            RateLimiter::hit($throttleKey, $decaySeconds);
         }
 
         return response()->json([
-            'message' => 'Jika email terdaftar, tautan reset kata sandi telah dikirim.',
+            'message' => 'Jika email terdaftar, kode verifikasi 6 digit telah dikirim.',
         ]);
     }
 
     /**
-     * Atur ulang kata sandi dengan token dari email (API / Flutter).
+     * Verify the reset code sent to the user (API / Flutter).
+     */
+    public function apiVerifyResetCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|digits:6',
+        ], [
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'code.required' => 'Kode verifikasi wajib diisi',
+            'code.digits' => 'Kode verifikasi harus 6 digit angka',
+        ]);
+
+        if (!$this->hasValidResetCode($validated['email'], $validated['code'])) {
+            return response()->json([
+                'message' => 'Kode verifikasi tidak valid atau sudah kedaluwarsa.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Kode verifikasi benar. Anda dapat mengatur kata sandi baru.',
+        ]);
+    }
+
+    /**
+     * Atur ulang kata sandi dengan kode dari email (API / Flutter).
      */
     public function apiResetPassword(Request $request): JsonResponse
     {
         $payload = [
-            'token' => $request->input('token'),
             'email' => $request->input('email'),
+            'code' => $request->input('code'),
             'kata_sandi' => $request->input('kata_sandi', $request->input('password')),
             'kata_sandi_konfirmasi' => $request->input(
                 'kata_sandi_konfirmasi',
@@ -460,32 +584,33 @@ class AuthController extends Controller
         ];
 
         $validated = validator($payload, [
-            'token' => 'required|string',
             'email' => 'required|email',
+            'code' => 'required|digits:6',
             'kata_sandi' => 'required|string|min:6',
             'kata_sandi_konfirmasi' => 'required|string|same:kata_sandi',
         ], [
-            'token.required' => 'Token reset wajib diisi',
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
+            'code.required' => 'Kode verifikasi wajib diisi',
+            'code.digits' => 'Kode verifikasi harus 6 digit angka',
             'kata_sandi.required' => 'Kata sandi baru wajib diisi',
             'kata_sandi.min' => 'Kata sandi baru minimal 6 karakter',
             'kata_sandi_konfirmasi.required' => 'Konfirmasi kata sandi wajib diisi',
             'kata_sandi_konfirmasi.same' => 'Konfirmasi kata sandi tidak cocok',
         ])->validate();
 
-        if (!$this->hasValidResetToken($validated['email'], $validated['token'])) {
-            throw ValidationException::withMessages([
-                'token' => 'Tautan reset kata sandi tidak valid atau sudah kedaluwarsa.',
-            ]);
+        if (!$this->hasValidResetCode($validated['email'], $validated['code'])) {
+            return response()->json([
+                'message' => 'Kode verifikasi tidak valid atau sudah kedaluwarsa.',
+            ], 422);
         }
 
         $pengguna = Pengguna::where('email', $validated['email'])->first();
 
         if (!$pengguna) {
-            throw ValidationException::withMessages([
-                'email' => 'Akun tidak ditemukan.',
-            ]);
+            return response()->json([
+                'message' => 'Akun tidak ditemukan.',
+            ], 404);
         }
 
         $pengguna->forceFill([
@@ -502,57 +627,33 @@ class AuthController extends Controller
     }
 
     /**
-     * @return array{plain_token: string, reset_url: string}
+     * @return array{plain_code: string}
      */
     private function createPasswordResetForUser(Pengguna $pengguna): array
     {
-        $plainToken = Str::random(64);
+        $plainCode = (string) random_int(100000, 999999);
 
         DB::table('password_reset_tokens')->where('email', $pengguna->email)->delete();
         DB::table('password_reset_tokens')->insert([
             'email' => $pengguna->email,
-            'token' => Hash::make($plainToken),
+            'token' => Hash::make($plainCode),
             'created_at' => now(),
         ]);
 
         return [
-            'plain_token' => $plainToken,
-            'reset_url' => $this->buildPasswordResetUrl($plainToken, $pengguna->email),
+            'plain_code' => $plainCode,
         ];
     }
 
-    private function buildPasswordResetUrl(string $plainToken, string $email): string
+    private function sendPasswordResetEmail(Pengguna $pengguna, string $code): void
     {
-        $template = config('app.mobile_password_reset_url');
-
-        if (is_string($template) && $template !== '') {
-            return str_replace(
-                ['{token}', '{email}'],
-                [rawurlencode($plainToken), rawurlencode($email)],
-                $template
-            );
-        }
-
-        return route('password.reset', [
-            'token' => $plainToken,
-            'email' => $email,
-        ]);
+        Mail::to($pengguna->email, $pengguna->nama)
+            ->send(new PasswordResetMail($pengguna, $code));
     }
 
-    private function sendPasswordResetEmail(Pengguna $pengguna, string $resetUrl): void
+    private function hasValidResetCode(string $email, string $code): bool
     {
-        Mail::raw(
-            "Halo {$pengguna->nama},\n\nKlik tautan berikut untuk mengatur ulang kata sandi akun Anda:\n{$resetUrl}\n\nTautan ini berlaku selama 60 menit.\nJika Anda tidak meminta reset kata sandi, abaikan email ini.",
-            function ($message) use ($pengguna) {
-                $message->to($pengguna->email, $pengguna->nama)
-                    ->subject('Reset Kata Sandi');
-            }
-        );
-    }
-
-    private function hasValidResetToken(string $email, string $token): bool
-    {
-        if ($email === '' || $token === '') {
+        if ($email === '' || $code === '') {
             return false;
         }
 
@@ -569,6 +670,6 @@ class AuthController extends Controller
             return false;
         }
 
-        return Hash::check($token, $record->token);
+        return Hash::check($code, $record->token);
     }
 }

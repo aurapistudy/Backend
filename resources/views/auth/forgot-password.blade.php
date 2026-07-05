@@ -133,7 +133,7 @@
 <body>
     <div class="card">
         <h1>Lupa Kata Sandi</h1>
-        <p>Masukkan email akun Anda. Sistem akan membuat tautan untuk mengatur ulang kata sandi.</p>
+        <p>Masukkan email akun Anda. Sistem akan mengirimkan kode 6 digit untuk verifikasi sebelum Anda membuat kata sandi baru.</p>
 
         @if ($errors->any())
             <div class="alert alert-error">
@@ -171,7 +171,7 @@
             >
 
             <div class="actions">
-                <button type="submit">Kirim Tautan Reset</button>
+                <button type="submit">Kirim Kode Verifikasi</button>
                 <a href="{{ route('login', [], false) }}" class="back-link">Kembali ke Login</a>
             </div>
         </form>

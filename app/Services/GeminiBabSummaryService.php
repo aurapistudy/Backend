@@ -8,6 +8,7 @@ use App\Models\MateriBab;
 use App\Services\Concerns\BuildsBabSummaryFromDecodedJson;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class GeminiBabSummaryService
 {
@@ -28,6 +29,14 @@ class GeminiBabSummaryService
         ]];
 
         $response = Http::timeout(120)
+            ->retry(3, 2000, function ($exception, $request) {
+                // Cuma retry kalau error 429 (rate limit) atau 503 (server overload/sibuk).
+                // Selain itu (401/403/404/dll) langsung gagal karena itu masalah konfigurasi, bukan transient.
+                if ($exception instanceof \Illuminate\Http\Client\RequestException) {
+                    return in_array($exception->response->status(), [429, 503], true);
+                }
+                return false;
+            })
             ->withHeaders([
                 'x-goog-api-key' => $apiKey,
             ])
@@ -43,6 +52,12 @@ class GeminiBabSummaryService
             $rawMessage = $response->json('error.message')
                 ?: $response->json('message')
                 ?: 'Permintaan ke Gemini gagal.';
+
+            Log::warning('Gemini generateSummary gagal.', [
+                'status' => $response->status(),
+                'model' => $model,
+                'body' => mb_substr($response->body(), 0, 1000),
+            ]);
 
             throw new GeminiCoverException(
                 $this->buildFriendlyErrorMessage($response->status(), $rawMessage, $model),

@@ -333,6 +333,57 @@
             text-decoration: underline;
         }
 
+        .password-wrapper {
+            position: relative;
+        }
+
+        /* Make space for the icon inside the input and disable native reveal */
+        .password-wrapper .form-input {
+            padding-right: 3.25rem;
+            -webkit-appearance: none;
+            appearance: none;
+            z-index: 1;
+        }
+
+        /* Hide vendor-specific native clear/reveal buttons */
+        .password-wrapper .form-input::-ms-clear,
+        .password-wrapper .form-input::-ms-reveal {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        .password-wrapper .form-input::-webkit-contacts-auto-fill-button,
+        .password-wrapper .form-input::-webkit-textfield-decoration-button {
+            display: none !important;
+            -webkit-appearance: none;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            color: var(--color-brown);
+            font-size: 0.95rem;
+            z-index: 2;
+        }
+
+        .toggle-password:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(248, 184, 3, 0.12);
+            border-radius: 8px;
+        }
+
         .forgot-link {
             color: var(--color-orange);
             font-weight: 600;
@@ -395,20 +446,30 @@
                     @enderror
                 </div>
                 
-                <!-- Kata Sandi Field -->
+                <!-- Kata Sandi Field (input + eye icon inside) -->
                 <div class="form-group">
                     <label for="kata_sandi" class="form-label">Kata Sandi</label>
-                    <input 
-                        type="password" 
-                        id="kata_sandi" 
-                        name="kata_sandi" 
-                        data-testid="login-password"
-                        aria-label="Kata Sandi"
-                        class="form-input @error('kata_sandi') error-input @enderror" 
-                        placeholder="Masukan Kata Sandi" 
-                        required
-                        autocomplete="current-password"
-                    >
+                    <div class="password-wrapper" style="margin-top: 0.4rem;">
+                        <input 
+                            type="password" 
+                            id="kata_sandi" 
+                            name="kata_sandi" 
+                            data-testid="login-password"
+                            aria-label="Kata Sandi"
+                            class="form-input @error('kata_sandi') error-input @enderror" 
+                            placeholder="Masukan Kata Sandi" 
+                            required
+                            autocomplete="current-password"
+                        >
+
+                        <button type="button" id="toggle_password" class="toggle-password" aria-label="Tampilkan kata sandi" aria-pressed="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+
                     @error('kata_sandi')
                         <span style="color: #c33; font-size: 0.875rem; margin-top: 0.25rem; display: block;">{{ $message }}</span>
                     @enderror
@@ -466,6 +527,23 @@
                 }, 200);
             }
         });
+
+// Toggle password visibility using eye icon button (swap SVGs)
+const togglePwBtn = document.getElementById('toggle_password');
+if (togglePwBtn) {
+    const eyeSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>';
+    const eyeOffSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"></path><path stroke-linecap="round" stroke-linejoin="round" d="M10.94 10.94a3 3 0 014.12 4.12"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c1.02 0 1.993.16 2.894.456"></path></svg>';
+
+    togglePwBtn.addEventListener('click', function () {
+        const input = document.getElementById('kata_sandi');
+        if (!input) return;
+        const willShow = input.type === 'password';
+        input.type = willShow ? 'text' : 'password';
+        this.setAttribute('aria-pressed', String(willShow));
+        this.innerHTML = willShow ? eyeOffSvg : eyeSvg;
+    });
+}
+
 
         // Show loading state on form submit
         document.getElementById('loginForm').addEventListener('submit', function(e) {

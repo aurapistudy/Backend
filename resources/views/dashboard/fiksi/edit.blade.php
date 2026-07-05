@@ -313,23 +313,19 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Cover Buku</label>
-                        <input type="file" name="cover_path" id="cover_path" accept=".jpg,.jpeg,.png,.webp" class="form-input">
-                        <span class="hint">JPG, PNG, atau WEBP. Maksimal 5 MB. Kosongkan jika tidak ingin mengganti cover.</span>
-                        <div class="cover-preview" id="cover_preview">
-                            @if($fiksi->cover_path)
-                                <img src="{{ Storage::url($fiksi->cover_path) }}" alt="Cover {{ $fiksi->judul_buku }}" id="cover_preview_image">
-                            @else
-                                <div class="cover-preview-placeholder">
-                                    <i data-lucide="image"></i>
-                                    <div>Belum ada cover</div>
-                                </div>
-                            @endif
-                        </div>
-                        @error('cover_path')
-                            <span class="error-message">{{ $message }}</span>
-                        @enderror
+                    <label class="form-label">Cover Buku</label>
+                    <div class="cover-preview">
+                        @if($fiksi->cover_path)
+                            <img src="{{ Storage::url($fiksi->cover_path) }}" alt="Cover {{ $fiksi->judul_buku }}">
+                        @else
+                            <div class="cover-preview-placeholder">
+                                <i data-lucide="image"></i>
+                                <div>Belum ada cover</div>
+                            </div>
+                        @endif
                     </div>
+                    <span class="hint">Cover dibuat otomatis dari halaman pertama file PDF saat fiksi ditambahkan.</span>
+                </div>
 
                     <div class="form-group">
                         <label class="form-label">File Cerita</label>
@@ -390,26 +386,7 @@
     </script>
     <script>
     lucide.createIcons();
-
-    const coverInput = document.getElementById('cover_path');
-    const coverPreview = document.getElementById('cover_preview');
-
-    if (coverInput && coverPreview) {
-        coverInput.addEventListener('change', function () {
-            const file = coverInput.files && coverInput.files[0];
-            if (!file) {
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                coverPreview.innerHTML = '<img src="' + event.target.result + '" alt="Preview cover">';
-            };
-            reader.readAsDataURL(file);
-        });
-    }
 </script>
-
 </body>
 </html>
 

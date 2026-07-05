@@ -155,15 +155,6 @@
             <span>Tahun Akademik</span>
         </a>
     </div>
-    
-    <div class="nav-item" data-route="landing">
-        <a href="{{ route('landing.index', [], false) }}" data-testid="nav-landing" aria-label="Landing">
-            <span class="nav-icon">
-                <i data-lucide="layout-template"></i>
-            </span>
-            <span>Landing</span>
-        </a>
-    </div>
 
     <div class="nav-item" data-route="panduan">
     <a href="{{ route('panduan.index', [], false) }}" data-testid="nav-panduan" aria-label="Panduan">
@@ -212,7 +203,25 @@
         </a>
     </div>
     @endif
+
+        <div class="nav-item" data-route="landing">
+        <a href="{{ route('landing.index', [], false) }}" data-testid="nav-landing" aria-label="Landing">
+            <span class="nav-icon">
+                <i data-lucide="layout-template"></i>
+            </span>
+            <span>Pengaturan</span>
+        </a>
+    </div>
     
+        <div class="nav-item" data-route="tentang-kami">
+        <a href="{{ route('tentang-kami.index', [], false) }}" data-testid="nav-tentang-kami" aria-label="Tentang Kami">
+            <span class="nav-icon">
+                <i data-lucide="info"></i>
+            </span>
+            <span>Tentang Kami</span>
+        </a>
+    </div>
+
     <div class="nav-item" data-route="profile">
         <a href="/dashboard/profile" data-testid="nav-profile" aria-label="Profile">
             <span class="nav-icon">
@@ -242,6 +251,9 @@
         
         if (currentPath.includes('/dashboard/landing') || currentPath.includes('/landing')) {
             activeRoute = 'landing';
+        }
+        else if (currentPath.includes('/dashboard/tentang-kami') || currentPath.includes('/tentang-kami')) {
+            activeRoute = 'tentang-kami';
         }
         else if (currentPath.includes('/dashboard/panduan') || currentPath.includes('/panduan')) {
             activeRoute = 'panduan';

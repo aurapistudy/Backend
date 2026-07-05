@@ -59,16 +59,29 @@ class FiksiController extends Controller
         ]);
 
         if ($request->hasFile('cover_path')) {
-            $cover = $request->file('cover_path');
-            $coverName = time() . '_cover_' . $cover->getClientOriginalName();
-            $validated['cover_path'] = $cover->storeAs('fiksi/covers', $coverName, 'public');
-        }
+    // User upload cover manual — pakai itu, jangan auto-generate
+    $cover = $request->file('cover_path');
+    $coverName = time() . '_cover_' . $cover->getClientOriginalName();
+    $validated['cover_path'] = $cover->storeAs('fiksi/covers', $coverName, 'public');
+}
 
-        if ($request->hasFile('file_path')) {
-            $file = $request->file('file_path');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $validated['file_path'] = $file->storeAs('fiksi', $fileName, 'public');
+if ($request->hasFile('file_path')) {
+    $file = $request->file('file_path');
+    $fileName = time() . '_' . $file->getClientOriginalName();
+
+    // Auto-generate cover dari halaman 1 PDF, hanya kalau cover belum diisi manual
+    if (!$request->hasFile('cover_path') && strtolower($file->getClientOriginalExtension()) === 'pdf') {
+        $baseName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $autoCover = app(\App\Services\CoverGeneratorService::class)
+            ->generateFromPdf($file->getRealPath(), $baseName);
+
+        if ($autoCover !== null) {
+            $validated['cover_path'] = $autoCover;
         }
+    }
+
+    $validated['file_path'] = $file->storeAs('fiksi', $fileName, 'public');
+}
 
         $validated['dibuat_oleh'] = Auth::id();
         $validated['status_aktif'] = $request->has('status_aktif');

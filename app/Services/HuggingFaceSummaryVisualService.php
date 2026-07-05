@@ -179,17 +179,17 @@ class HuggingFaceSummaryVisualService
         $svgHeight = max(1350, $svgHeight);
         $cardH = $svgHeight - 104;
 
-        return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="{$svgHeight}" viewBox="0 0 1080 {$svgHeight}" role="img" aria-label="Poster rangkuman bab: {$title}">
-  <defs>
+    return <<<SVG
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="{$svgHeight}" viewBox="0 0 1080 {$svgHeight}" role="img" aria-label="Poster rangkuman bab: {$title}">   
+    <defs>
     <linearGradient id="pageBg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#FFFDF7" />
       <stop offset="100%" stop-color="#F8FAFC" />
     </linearGradient>
     <linearGradient id="heroShade" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="rgba(15,23,42,0.48)" />
-      <stop offset="100%" stop-color="rgba(15,23,42,0.18)" />
-    </linearGradient>
+  <stop offset="0%" stop-color="#0F172A" stop-opacity="0.48" />
+  <stop offset="100%" stop-color="#0F172A" stop-opacity="0.18" />
+</linearGradient>
     <linearGradient id="summaryBand" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0F172A" />
       <stop offset="100%" stop-color="#1E293B" />
@@ -202,7 +202,7 @@ class HuggingFaceSummaryVisualService
   {$this->buildFittedText($title, 116, 182, 56, 30, '#0F172A', 850, 6, 800)}
   <text x="116" y="230" font-size="22" fill="#64748B" font-family="{$fontFamily}" font-weight="700">Bab: {$chapter}</text>
   <rect x="86" y="{$heroTop}" width="908" height="{$heroH}" rx="34" fill="#E2E8F0" />
-  <image href="data:{$background['mime_type']};base64,{$background['base64']}" x="86" y="{$heroTop}" width="908" height="{$heroH}" preserveAspectRatio="xMidYMid slice" />
+  <image xlink:href="data:{$background['mime_type']};base64,{$background['base64']}" href="data:{$background['mime_type']};base64,{$background['base64']}" x="86" y="{$heroTop}" width="908" height="{$heroH}" preserveAspectRatio="xMidYMid slice" />
   <rect x="86" y="{$heroTop}" width="908" height="{$heroH}" rx="34" fill="url(#heroShade)" />
   <rect x="86" y="{$bandTop}" width="908" height="{$bandH}" rx="28" fill="url(#summaryBand)" />
   <text x="118" y="{$bandLabelY}" font-size="22" font-weight="800" fill="#FCD34D" font-family="{$fontFamily}">Gambaran Cepat</text>
@@ -291,8 +291,29 @@ SVG;
 
     private function locateRsvgConvert(): ?string
     {
-        $candidates = ['rsvg-convert'];
         $isWindows = stripos(PHP_OS_FAMILY, 'Win') === 0;
+
+        // Cek lokasi umum dulu sebelum mengandalkan PATH — proses PHP yang sudah
+        // berjalan lama sering belum me-reload PATH terbaru (mis. setelah install
+        // via Chocolatey/apt tanpa restart server).
+        $wellKnownPaths = $isWindows
+            ? [
+                'C:\\ProgramData\\chocolatey\\bin\\rsvg-convert.exe',
+                'C:\\Program Files\\rsvg-convert\\rsvg-convert.exe',
+            ]
+            : [
+                '/usr/bin/rsvg-convert',
+                '/usr/local/bin/rsvg-convert',
+                '/opt/homebrew/bin/rsvg-convert',
+            ];
+
+        foreach ($wellKnownPaths as $path) {
+            if (@is_executable($path)) {
+                return $path;
+            }
+        }
+
+        $candidates = ['rsvg-convert'];
         if ($isWindows) {
             $candidates = ['rsvg-convert.exe', 'rsvg-convert'];
         }
@@ -307,6 +328,10 @@ SVG;
                 }
             }
         }
+
+        Log::warning('rsvg-convert tidak ditemukan di PATH maupun lokasi umum.', [
+            'checked_well_known_paths' => $wellKnownPaths,
+        ]);
 
         return null;
     }

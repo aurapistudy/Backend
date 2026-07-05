@@ -9,12 +9,8 @@ use Illuminate\Support\Facades\Hash;
 
 class PenggunaSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Cek apakah superadmin sudah ada
         $existingSuperadmin = Pengguna::where('email', 'superadmin@ruma.com')->first();
         
         if (!$existingSuperadmin) {

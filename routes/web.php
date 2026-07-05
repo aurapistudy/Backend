@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PanduanController;
+use App\Http\Controllers\TentangKamiController;
+use App\Http\Controllers\SettingController;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing.home');
 Route::post('/ulasan', [LandingPageController::class, 'storeUlasan'])->name('landing.ulasan.store');
@@ -27,19 +29,25 @@ if (config('app.debug')) {
 
 // Auth Routes
 Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
+Route::post('/login', [App\Http\Controllers\AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 Route::get('/forgot-password', [App\Http\Controllers\AuthController::class, 'showForgotPasswordForm'])
     ->middleware('guest')
     ->name('password.request');
 Route::post('/forgot-password', [App\Http\Controllers\AuthController::class, 'sendResetLink'])
-    ->middleware('guest')
+    ->middleware(['guest', 'throttle:5,1'])
     ->name('password.email');
-Route::get('/reset-password/{token}', [App\Http\Controllers\AuthController::class, 'showResetPasswordForm'])
+Route::get('/verify-reset-code', [App\Http\Controllers\AuthController::class, 'showVerifyResetCodeForm'])
+    ->middleware('guest')
+    ->name('password.verify');
+Route::post('/verify-reset-code', [App\Http\Controllers\AuthController::class, 'verifyResetCode'])
+    ->middleware(['guest', 'throttle:5,1'])
+    ->name('password.verify.post');
+Route::get('/reset-password', [App\Http\Controllers\AuthController::class, 'showResetPasswordForm'])
     ->middleware('guest')
     ->name('password.reset');
 Route::post('/reset-password', [App\Http\Controllers\AuthController::class, 'resetPassword'])
-    ->middleware('guest')
+    ->middleware(['guest', 'throttle:5,1'])
     ->name('password.update');
 Route::get('/register', [App\Http\Controllers\AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
@@ -174,6 +182,8 @@ Route::middleware('auth')->group(function () {
                 'destroy' => 'panduan.destroy',
             ]);
 
+            Route::resource('dashboard/tentang-kami', TentangKamiController::class)->only(['index']);
+
             Route::resource('dashboard/fiksi', App\Http\Controllers\FiksiController::class)->names([
                 'index' => 'fiksi.index',
                 'create' => 'fiksi.create',
@@ -229,6 +239,9 @@ Route::middleware('auth')->group(function () {
                 'update' => 'landing.update',
                 'destroy' => 'landing.destroy',
             ]);
+
+            Route::get('/dashboard/settings', [SettingController::class, 'edit'])->name('settings.edit');
+            Route::put('/dashboard/settings', [SettingController::class, 'update'])->name('settings.update');
 
             Route::get('/dashboard/ulasan', [App\Http\Controllers\UlasanController::class, 'index'])
                 ->name('ulasan.index');

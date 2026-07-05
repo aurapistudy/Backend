@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('materi', function (Blueprint $table) {
@@ -22,14 +19,11 @@ return new class extends Migration
             $table->string('file_path', 255)->nullable();
             $table->integer('jumlah_halaman')->nullable();
             $table->boolean('status_aktif')->default(true);
-            $table->foreignId('dibuat_oleh')->constrained('pengguna')->onDelete('cascade');
+            $table->unsignedBigInteger('dibuat_oleh')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('materi');

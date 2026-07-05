@@ -8,6 +8,7 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
+    
     @include('components.dashboard-shell-styles')
     <style>
         .add-button {
@@ -205,6 +206,48 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* PRIMARY (Tambah Konten) */
+        .btn-primary {
+            background: var(--color-accent);
+            color: #1F2937;
+            box-shadow: 0 4px 12px rgba(248, 184, 3, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: #E6A500;
+            transform: translateY(-2px);
+        }
+
+        /* OUTLINE (Pengaturan API) */
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--color-gray);
+            color: var(--color-text);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+            background: #FFF9E6;
+        }
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
         @media (max-width: 768px) {.page-intro { flex-direction: column; align-items: flex-start; } .table-container { padding: 1rem; }}
         </style>
 </head>
@@ -226,18 +269,25 @@
 
                 <div class="list-search-panel">
                     <div class="page-intro">
-                        <div>
-                            <div class="page-subtitle">Kelola konten landing agar informasi di halaman utama selalu relevan.</div>
-                            <div class="summary-card">
-                                <span class="summary-icon"><i data-lucide="layers"></i></span>
-                                <div class="summary-text">{{ ($search ?? '') !== '' ? 'Hasil pencarian' : 'Total konten' }}: {{ $landingItems->total() }} item</div>
-                            </div>
-                        </div>
-                        <a href="{{ route('landing.create') }}" class="add-button" style="text-decoration: none; display: inline-flex;">
-                            <i data-lucide="plus"></i>
-                            <span>Tambah Konten</span>
-                        </a>
-                    </div>
+    <div>
+        <div class="page-subtitle">Kelola konten landing agar informasi di halaman utama selalu relevan.</div>
+        <div class="summary-card">
+            <span class="summary-icon"><i data-lucide="layers"></i></span>
+            <div class="summary-text">{{ ($search ?? '') !== '' ? 'Hasil pencarian' : 'Total konten' }}: {{ $landingItems->total() }} item</div>
+        </div>
+    </div>
+    <div class="header-actions">
+        <a href="{{ route('settings.edit') }}" class="btn btn-outline">
+            <i data-lucide="key-round"></i>
+            Pengaturan API
+        </a>
+
+        <a href="{{ route('landing.create') }}" class="btn btn-primary">
+            <i data-lucide="plus"></i>
+            Tambah Konten
+        </a>
+    </div>
+</div>
 
                     @include('components.list-search', [
                         'action' => route('landing.index'),

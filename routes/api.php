@@ -18,35 +18,17 @@ use App\Http\Controllers\ApiPanduanController;
 use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\AacController;
 
-
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| These routes mirror the API plan in API_DOCUMENTATION.md / SETUP_API_ROUTES.md.
-| They assume Sanctum is installed and the controllers expose API methods.
-|
-*/
-
-// Public routes
-Route::post('/login', [AuthController::class, 'apiLogin']);
+Route::post('/login', [AuthController::class, 'apiLogin'])->middleware('throttle:10,1');
 Route::post('/register', [AuthController::class, 'apiRegister']);
-Route::post('/forgot-password', [AuthController::class, 'apiForgotPassword']);
-Route::post('/reset-password', [AuthController::class, 'apiResetPassword']);
-// Panduan
+Route::post('/forgot-password', [AuthController::class, 'apiForgotPassword'])->middleware('throttle:5,1');
+Route::post('/verify-reset-code', [AuthController::class, 'apiVerifyResetCode'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'apiResetPassword'])->middleware('throttle:5,1');
     Route::get('/panduan', [ApiPanduanController::class, 'index']);
-// AAC (public read-only)
 Route::get('/aac', [AacController::class, 'index']);
 Route::get('/aac/{id}', [AacController::class, 'show']);
-// Protected routes
 Route::middleware('auth:sanctum')->group(function () {
-    // Auth
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'apiLogout']);
-
-    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'apiIndex']);
 
     // Resources (prefix route names to avoid collision with web routes)

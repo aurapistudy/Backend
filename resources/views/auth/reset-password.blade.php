@@ -110,10 +110,14 @@
             </div>
         @endif
 
+        @if (session('status'))
+            <div class="alert" style="background: #eefbf0; border-color: #b7e0bf; color: #246b34;">{{ session('status') }}</div>
+        @endif
+
         <form method="POST" action="{{ route('password.update', [], false) }}">
             @csrf
-            <input type="hidden" name="token" value="{{ $token }}">
             <input type="hidden" name="email" value="{{ $email }}">
+            <input type="hidden" name="code" value="{{ $code ?? '' }}">
 
             <label for="kata_sandi">Kata Sandi Baru</label>
             <input

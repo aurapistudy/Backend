@@ -23,10 +23,6 @@ class MateriController extends Controller
     use FiltersByAssignedMapel;
 
     private const PDF_TARGET_MAX_KB = 10240;
-
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $search = trim((string) request('search', ''));

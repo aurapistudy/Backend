@@ -178,8 +178,7 @@
             justify-content: center;
         }
 
-        .cover-modal-
-.cover-modal-grid {
+        .cover-modal-grid {
             display: grid;
             grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
             gap: 1.5rem;
