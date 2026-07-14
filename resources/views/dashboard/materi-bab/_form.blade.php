@@ -2,6 +2,8 @@
     $isEdit = isset($bab);
     $currentTipe = old('tipe_konten', $bab->tipe_konten ?? 'teks');
     $currentPdfSelection = old('pdf_page_selection', $bab->pdf_page_selection ?? '');
+    $pdfSourceOptions = $pdfSourceOptions ?? [];
+    $currentPdfSourcePath = old('pdf_source_path', $bab->pdf_source_path ?? '');
 @endphp
 
 <div class="form-group">
@@ -28,8 +30,30 @@
 </div>
 
 <div id="file_path_field" class="form-group" style="display: {{ $currentTipe === 'file' ? 'block' : 'none' }};">
-    <label class="form-label">File Materi (PDF, DOC, DOCX) <span class="required">*</span></label>
-    <input type="file" name="file_path" id="file_path" accept=".pdf,.doc,.docx" class="form-input">
+    @if(!empty($pdfSourceOptions))
+        <div class="form-group">
+            <label class="form-label">PDF Sumber / Master</label>
+            <select name="pdf_source_path" id="pdf_source_path" class="form-select">
+                <option value="">Upload file baru</option>
+                @foreach($pdfSourceOptions as $option)
+                    <option
+                        value="{{ $option['path'] }}"
+                        data-url="{{ $option['url'] }}"
+                        {{ $currentPdfSourcePath === $option['path'] ? 'selected' : '' }}
+                    >
+                        Pakai {{ $option['label'] }} ({{ $option['file_name'] }})
+                    </option>
+                @endforeach
+            </select>
+            <span class="hint">Hanya PDF sumber asli yang ditampilkan di sini. File potongan per bab tidak akan muncul sebagai sumber.</span>
+        </div>
+    @else
+        <input type="hidden" name="pdf_source_path" id="pdf_source_path" value="">
+    @endif
+
+    <label class="form-label">File Materi (PDF, Word, PowerPoint, TXT) <span class="required">*</span></label>
+    <input type="file" name="file_path" id="file_path" accept=".pdf,.doc,.docx,.ppt,.pptx,.odt,.odp,.rtf,.txt" class="form-input">
+    <span class="hint" id="file_upload_hint">Upload file baru hanya diperlukan jika tidak memakai PDF sumber yang sudah ada.</span>
     <input type="hidden" name="pdf_page_selection" id="pdf_page_selection" value="{{ $currentPdfSelection }}">
     @if($isEdit && !empty($bab->file_path))
         <div class="current-file">File saat ini: <a href="{{ Storage::url($bab->file_path) }}" target="_blank">{{ basename($bab->file_path) }}</a></div>

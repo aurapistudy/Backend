@@ -191,6 +191,7 @@
         </style>
 </head>
 <body>
+    @php($isSuperAdmin = auth()->user()?->isSuperAdmin())
     <div class="dashboard-container">
         @include('components.dashboard-sidebar')
 
@@ -274,10 +275,12 @@
 
                     <!-- Action Buttons -->
                     <div class="action-buttons">
-                        <a href="{{ route('mata-pelajaran.edit', $mataPelajaran->id) }}" class="btn btn-primary">
-                            <i data-lucide="pencil"></i>
-                            Edit Mata Pelajaran
-                        </a>
+                        @unless($isSuperAdmin)
+                            <a href="{{ route('mata-pelajaran.edit', $mataPelajaran->id) }}" class="btn btn-primary">
+                                <i data-lucide="pencil"></i>
+                                Edit Mata Pelajaran
+                            </a>
+                        @endunless
                         <a href="{{ route('mata-pelajaran.index') }}" class="btn btn-secondary">
                             <i data-lucide="arrow-left"></i>
                             Kembali
@@ -314,4 +317,3 @@
 </script>
 </body>
 </html>
-

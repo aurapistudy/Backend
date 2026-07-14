@@ -35,6 +35,7 @@
         </style>
 </head>
 <body>
+    @php($isSuperAdmin = auth()->user()?->isSuperAdmin())
     <div class="dashboard-container">
         @include('components.dashboard-sidebar')
 
@@ -86,8 +87,10 @@
                     </div>
                 </div>
 
-                <form action="{{ route('kuis.hasil.update', $hasil->id) }}" method="post">
+                @unless($isSuperAdmin)
+                    <form action="{{ route('kuis.hasil.update', $hasil->id) }}" method="post">
                     @csrf
+                @endunless
                     @foreach($hasil->jawaban as $index => $jawaban)
                         @php
                             $p = $jawaban->pertanyaan;
@@ -124,18 +127,23 @@
                                         @endif
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Skor Auto (0-100)</label>
-                                    <input type="number" min="0" max="100" name="koreksi[{{ $jawaban->id }}][skor_auto]" value="{{ $jawaban->skor_auto ?? 0 }}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Status Koreksi</label>
-                                    <select name="koreksi[{{ $jawaban->id }}][status_koreksi]">
-                                        <option value="pending" {{ $jawaban->status_koreksi === 'pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="approved" {{ $jawaban->status_koreksi === 'approved' ? 'selected' : '' }}>Disetujui</option>
-                                        <option value="rejected" {{ $jawaban->status_koreksi === 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                                    </select>
-                                </div>
+                                @if($isSuperAdmin)
+                                    <p>Skor Auto: {{ $jawaban->skor_auto ?? 0 }}</p>
+                                    <p>Status Koreksi: {{ ucfirst($jawaban->status_koreksi ?? 'pending') }}</p>
+                                @else
+                                    <div class="form-group">
+                                        <label>Skor Auto (0-100)</label>
+                                        <input type="number" min="0" max="100" name="koreksi[{{ $jawaban->id }}][skor_auto]" value="{{ $jawaban->skor_auto ?? 0 }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Status Koreksi</label>
+                                        <select name="koreksi[{{ $jawaban->id }}][status_koreksi]">
+                                            <option value="pending" {{ $jawaban->status_koreksi === 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="approved" {{ $jawaban->status_koreksi === 'approved' ? 'selected' : '' }}>Disetujui</option>
+                                            <option value="rejected" {{ $jawaban->status_koreksi === 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                                        </select>
+                                    </div>
+                                @endif
                             @else
                                 <p>Jawaban: {{ $jawaban->opsi?->label ?? '-' }}</p>
                                 <p>Status: {{ $jawaban->benar ? 'Benar' : 'Salah' }}</p>
@@ -144,17 +152,21 @@
                     @endforeach
 
                     <div class="card" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                        <button class="btn btn-outline-green" type="submit">
-                            <i data-lucide="save"></i>
-                            Simpan Koreksi
-                        </button>
+                        @unless($isSuperAdmin)
+                            <button class="btn btn-outline-green" type="submit">
+                                <i data-lucide="save"></i>
+                                Simpan Koreksi
+                            </button>
+                        @endunless
                         @if($hasil->kuis_id)
                             <a class="btn btn-secondary" href="{{ route('kuis.hasil.kuis', $hasil->kuis_id) }}">Kembali ke Daftar Siswa</a>
                         @else
                             <a class="btn btn-secondary" href="{{ route('kuis.hasil.index') }}">Kembali</a>
                         @endif
                     </div>
-                </form>
+                @unless($isSuperAdmin)
+                    </form>
+                @endunless
             </div>
         </main>
     </div>
@@ -182,4 +194,3 @@
     </script>
 </body>
 </html>
-

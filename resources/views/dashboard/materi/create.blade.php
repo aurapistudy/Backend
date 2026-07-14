@@ -996,10 +996,10 @@
 
                     <div id="file_path_field" class="form-group" style="display: none;">
                         <label class="form-label">
-                            File Materi 1 (PDF, DOC, DOCX) <span class="required">*</span>
+                            File Materi 1 (PDF, Word, PowerPoint, TXT) <span class="required">*</span>
                         </label>
-                        <input type="file" name="file_path" id="file_path" accept=".pdf,.doc,.docx" class="form-input">
-                        <small class="hint">PDF di atas 10 MB akan dicoba dikompres otomatis sampai 10 MB. DOC/DOCX tetap maksimal 10 MB, dan total upload tetap mengikuti batas server.</small>
+                        <input type="file" name="file_path" id="file_path" accept=".pdf,.doc,.docx,.ppt,.pptx,.odt,.odp,.rtf,.txt" class="form-input">
+                        <small class="hint">PDF di atas 10 MB akan dicoba dikompres otomatis sampai 10 MB. File Word, PowerPoint, ODT/ODP, RTF, dan TXT tetap maksimal 10 MB.</small>
                         <input type="hidden" name="pdf_page_selection" id="pdf_page_selection" value="">
                         <div id="pdf_selection_panel" class="pdf-selection-panel" style="display: none;">
                             <div id="pdf_selection_loading" class="pdf-selection-loading" style="display: none;">Sedang menyiapkan preview halaman PDF...</div>
@@ -1603,6 +1603,7 @@
             const urutan = data.urutan || (index + 1);
             const tipeKonten = data.tipe_konten || 'teks';
             const kontenTeks = data.konten_teks || '';
+            const pdfSourceMode = data.pdf_source_mode || 'upload';
             const pdfSelection = data.pdf_page_selection || '';
             const isAktif = data.status_aktif === undefined ? true : Boolean(Number(data.status_aktif) || data.status_aktif === true || data.status_aktif === '1');
 
@@ -1637,9 +1638,17 @@
                 </div>
                 <div class="chapter-file-field" style="display:${tipeKonten === 'file' ? 'block' : 'none'};">
                     <div class="form-group">
-                        <label class="form-label">File Materi (PDF, DOC, DOCX) <span class="required">*</span></label>
-                        <input type="file" name="bab_files[${index}]" accept=".pdf,.doc,.docx" class="form-input chapter-file-input">
-                        <span class="hint">Kalau PDF, isi pilihan halaman dengan nomor yang dipisahkan koma. Contoh: 1,2,3,4</span>
+                        <label class="form-label">Sumber File</label>
+                        <select name="bab[${index}][pdf_source_mode]" class="form-select chapter-source-select">
+                            <option value="upload" ${pdfSourceMode === 'upload' ? 'selected' : ''}>Upload file baru</option>
+                            <option value="first_bab" ${pdfSourceMode === 'first_bab' ? 'selected' : ''}>Pakai PDF Materi 1</option>
+                        </select>
+                        <span class="hint">Gunakan PDF Materi 1 jika materi ini berasal dari file yang sama, lalu isi range halaman di bawah.</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">File Materi (PDF, Word, PowerPoint, TXT) <span class="required">*</span></label>
+                        <input type="file" name="bab_files[${index}]" accept=".pdf,.doc,.docx,.ppt,.pptx,.odt,.odp,.rtf,.txt" class="form-input chapter-file-input">
+                        <span class="hint chapter-file-hint">Kalau PDF, isi pilihan halaman dengan nomor yang dipisahkan koma. Contoh: 1,2,3,4</span>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Pilihan Halaman PDF</label>
@@ -1663,16 +1672,31 @@
             const fileField = wrapper.querySelector('.chapter-file-field');
             const textarea = textField.querySelector('textarea');
             const fileInputLocal = wrapper.querySelector('.chapter-file-input');
+            const sourceSelect = wrapper.querySelector('.chapter-source-select');
+            const fileHint = wrapper.querySelector('.chapter-file-hint');
+
+            function syncChapterSource() {
+                const sourceValue = sourceSelect.value;
+                fileInputLocal.required = typeSelect.value === 'file' && sourceValue === 'upload';
+                fileInputLocal.disabled = typeSelect.value === 'file' && sourceValue === 'first_bab';
+                if (fileInputLocal.disabled) {
+                    fileInputLocal.value = '';
+                }
+                fileHint.textContent = sourceValue === 'first_bab'
+                    ? 'Tidak perlu upload ulang. Sistem akan membuat file materi dari PDF Materi 1 sesuai pilihan halaman.'
+                    : 'Kalau PDF, isi pilihan halaman dengan nomor yang dipisahkan koma. Contoh: 1,2,3,4';
+            }
 
             function syncChapterType() {
                 const typeValue = typeSelect.value;
                 textField.style.display = typeValue === 'teks' ? 'block' : 'none';
                 fileField.style.display = typeValue === 'file' ? 'block' : 'none';
                 textarea.required = typeValue === 'teks';
-                fileInputLocal.required = typeValue === 'file';
+                syncChapterSource();
             }
 
             typeSelect.addEventListener('change', syncChapterType);
+            sourceSelect.addEventListener('change', syncChapterSource);
             syncChapterType();
 
             removeButton.addEventListener('click', () => {
@@ -2027,7 +2051,5 @@
     </script>
 </body>
 </html>
-
-
 
 

@@ -459,6 +459,7 @@
         </style>
 </head>
 <body>
+    @php($isSuperAdmin = auth()->user()?->isSuperAdmin())
     <div class="dashboard-container">
         @include('components.dashboard-sidebar')
 
@@ -487,10 +488,12 @@
                             <i data-lucide="layers"></i>
                             <span>{{ $search ? 'Hasil pencarian' : 'Total mata pelajaran' }}: {{ $materi->total() }} item</span>
                         </div>
-                        <a href="{{ route('materi.create') }}" class="add-button" style="text-decoration: none; display: inline-flex;">
-                            <span><i data-lucide="plus"></i></span>
-                            <span>Tambah Mata Pelajaran</span>
-                        </a>
+                        @unless($isSuperAdmin)
+                            <a href="{{ route('materi.create') }}" class="add-button" style="text-decoration: none; display: inline-flex;">
+                                <span><i data-lucide="plus"></i></span>
+                                <span>Tambah Mata Pelajaran</span>
+                            </a>
+                        @endunless
                     </div>
 
                     <form action="{{ route('materi.index') }}" method="GET" class="search-form" role="search">
@@ -569,13 +572,15 @@
                                                <a href="{{ route('materi.show', $item->id) }}" class="action-btn view" title="Lihat">
                                             <i data-lucide="eye"></i>
                                         </a>
-                                    <a href="{{ route('materi.edit', $item->id) }}" class="action-btn edit" title="Edit">
-                                        <i data-lucide="edit-3"></i>
-                                    </a>
-                                    <button type="button" class="action-btn delete" title="Hapus"
-                                        onclick="handleDeleteMateri({{ $item->id }}, '{{ addslashes($item->judul) }}')">
-                                        <i data-lucide="trash-2"></i>
-                                    </button>
+                                    @unless($isSuperAdmin)
+                                        <a href="{{ route('materi.edit', $item->id) }}" class="action-btn edit" title="Edit">
+                                            <i data-lucide="edit-3"></i>
+                                        </a>
+                                        <button type="button" class="action-btn delete" title="Hapus"
+                                            onclick="handleDeleteMateri({{ $item->id }}, '{{ addslashes($item->judul) }}')">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                                    @endunless
                                    </div>
                                         </td>
                                     </tr>

@@ -95,6 +95,11 @@ class Pengguna extends Authenticatable
         return $this->peran === 'admin';
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->peran === 'admin' && $this->email === 'superadmin@ruma.com';
+    }
+
     public function isGuruMapel(): bool
     {
         return $this->peran === 'guru';

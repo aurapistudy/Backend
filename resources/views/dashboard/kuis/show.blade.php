@@ -22,6 +22,7 @@
         </style>
 </head>
 <body>
+    @php($isSuperAdmin = auth()->user()?->isSuperAdmin())
     <div class="dashboard-container">
         @include('components.dashboard-sidebar')
 
@@ -39,7 +40,9 @@
                     <div class="desc">Materi: {{ $kuis->materiBab ? 'Materi ' . $kuis->materiBab->urutan . ' - ' . $kuis->materiBab->judul_bab : '-' }}</div>
                     <div class="desc">Status: {{ $kuis->status_aktif ? 'Aktif' : 'Nonaktif' }}</div>
                     <div class="actions" style="margin-top:1rem;">
-                        <a href="{{ route('kuis.edit', $kuis->id) }}" class="btn btn-secondary">Edit</a>
+                        @unless($isSuperAdmin)
+                            <a href="{{ route('kuis.edit', $kuis->id) }}" class="btn btn-secondary">Edit</a>
+                        @endunless
                         <a href="{{ route('kuis.index') }}" class="btn btn-secondary">Kembali</a>
                     </div>
                 </div>

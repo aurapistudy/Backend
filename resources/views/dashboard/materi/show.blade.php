@@ -724,6 +724,7 @@
         </style>
 </head>
 <body>
+    @php($isSuperAdmin = auth()->user()?->isSuperAdmin())
     <div class="dashboard-container">
         @include('components.dashboard-sidebar')
 
@@ -792,16 +793,18 @@
                                         <div class="chapter-stat-value">{{ $materi->updated_at->format('d M Y') }}</div>
                                     </div>
                                 </div>
-                                <div class="chapter-side-actions">
-                                    <a href="{{ route('materi.bab.create', $materi->id) }}" class="btn btn-primary">
-                                        <i data-lucide="plus-circle"></i>
-                                        Tambah Materi
-                                    </a>
-                                    <a href="{{ route('materi.edit', $materi->id) }}" class="btn btn-secondary">
-                                        <i data-lucide="edit-3"></i>
-                                        Edit Mata Pelajaran
-                                    </a>
-                                </div>
+                                @unless($isSuperAdmin)
+                                    <div class="chapter-side-actions">
+                                        <a href="{{ route('materi.bab.create', $materi->id) }}" class="btn btn-primary">
+                                            <i data-lucide="plus-circle"></i>
+                                            Tambah Materi
+                                        </a>
+                                        <a href="{{ route('materi.edit', $materi->id) }}" class="btn btn-secondary">
+                                            <i data-lucide="edit-3"></i>
+                                            Edit Mata Pelajaran
+                                        </a>
+                                    </div>
+                                @endunless
                             </aside>
 
                             <div class="chapter-main">
@@ -810,10 +813,12 @@
                                         <div class="chapter-main-title">Daftar Materi</div>
                                         <div class="chapter-main-subtitle">Kelola rincian materi langsung dari sini agar setiap topik tetap runtut dan mudah dihubungkan ke kuis.</div>
                                     </div>
-                                    <a href="{{ route('materi.bab.create', $materi->id) }}" class="btn btn-primary">
-                                        <i data-lucide="plus-circle"></i>
-                                        Tambah Materi
-                                    </a>
+                                    @unless($isSuperAdmin)
+                                        <a href="{{ route('materi.bab.create', $materi->id) }}" class="btn btn-primary">
+                                            <i data-lucide="plus-circle"></i>
+                                            Tambah Materi
+                                        </a>
+                                    @endunless
                                 </div>
 
                                 @if($materi->bab->count() > 0)
@@ -834,36 +839,42 @@
                                                         </div>
                                                     </div>
                                                     <div class="chapter-actions">
-                                                        <form method="POST" action="{{ route('materi.bab.generate-summary', [$materi->id, $bab->id]) }}">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-secondary" style="background:#FFF7D6; color:#8A6500;">
-                                                                <i data-lucide="sparkles"></i>
-                                                                {{ $bab->summary_generated_at ? 'Perbarui Rangkuman' : 'Generate Rangkuman' }}
-                                                            </button>
-                                                        </form>
-                                                        @if($bab->kuis->isNotEmpty())
-                                                            <a href="{{ route('kuis.edit', $bab->kuis->first()->id) }}" class="btn btn-primary">
-                                                                <i data-lucide="clipboard-check"></i>
-                                                                Kelola Kuis
-                                                            </a>
-                                                        @else
-                                                            <a href="{{ route('kuis.create', ['materi_id' => $materi->id, 'materi_bab_id' => $bab->id]) }}" class="btn btn-primary">
-                                                                <i data-lucide="clipboard-plus"></i>
-                                                                Buat Kuis
-                                                            </a>
-                                                        @endif
-                                                        <a href="{{ route('materi.bab.edit', [$materi->id, $bab->id]) }}" class="btn btn-secondary">
-                                                            <i data-lucide="edit-3"></i>
-                                                            Edit
+                                                        <a href="{{ route('materi.bab.show', [$materi->id, $bab->id]) }}" class="btn btn-secondary" style="background:#E3F2FD; color:#1976D2;">
+                                                            <i data-lucide="eye"></i>
+                                                            Lihat
                                                         </a>
-                                                        <form method="POST" action="{{ route('materi.bab.destroy', [$materi->id, $bab->id]) }}" onsubmit="return confirm('Hapus materi ini?');">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-secondary" style="background:#FEE2E2; color:#991B1B;">
-                                                                <i data-lucide="trash-2"></i>
-                                                                Hapus
-                                                            </button>
-                                                        </form>
+                                                        @unless($isSuperAdmin)
+                                                            <form method="POST" action="{{ route('materi.bab.generate-summary', [$materi->id, $bab->id]) }}">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-secondary" style="background:#FFF7D6; color:#8A6500;">
+                                                                    <i data-lucide="sparkles"></i>
+                                                                    {{ $bab->summary_generated_at ? 'Perbarui Rangkuman' : 'Generate Rangkuman' }}
+                                                                </button>
+                                                            </form>
+                                                            @if($bab->kuis->isNotEmpty())
+                                                                <a href="{{ route('kuis.edit', $bab->kuis->first()->id) }}" class="btn btn-primary">
+                                                                    <i data-lucide="clipboard-check"></i>
+                                                                    Kelola Kuis
+                                                                </a>
+                                                            @else
+                                                                <a href="{{ route('kuis.create', ['materi_id' => $materi->id, 'materi_bab_id' => $bab->id]) }}" class="btn btn-primary">
+                                                                    <i data-lucide="clipboard-plus"></i>
+                                                                    Buat Kuis
+                                                                </a>
+                                                            @endif
+                                                            <a href="{{ route('materi.bab.edit', [$materi->id, $bab->id]) }}" class="btn btn-secondary">
+                                                                <i data-lucide="edit-3"></i>
+                                                                Edit
+                                                            </a>
+                                                            <form method="POST" action="{{ route('materi.bab.destroy', [$materi->id, $bab->id]) }}" onsubmit="return confirm('Hapus materi ini?');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-secondary" style="background:#FEE2E2; color:#991B1B;">
+                                                                    <i data-lucide="trash-2"></i>
+                                                                    Hapus
+                                                                </button>
+                                                            </form>
+                                                        @endunless
                                                     </div>
                                                 </div>
 
@@ -926,10 +937,12 @@
                     </div>
 
                     <div class="action-buttons">
-                        <a href="{{ route('materi.edit', $materi->id) }}" class="btn btn-primary">
-                            <i data-lucide="edit-3"></i>
-                            Edit Mata Pelajaran
-                        </a>
+                        @unless($isSuperAdmin)
+                            <a href="{{ route('materi.edit', $materi->id) }}" class="btn btn-primary">
+                                <i data-lucide="edit-3"></i>
+                                Edit Mata Pelajaran
+                            </a>
+                        @endunless
                         <a href="{{ route('materi.index') }}" class="btn btn-secondary">
                             <i data-lucide="arrow-left"></i>
                             Kembali

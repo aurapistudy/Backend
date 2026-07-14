@@ -171,6 +171,12 @@ class GeminiQuizService
                 'pdf' => 'application/pdf',
                 'doc' => 'application/msword',
                 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'ppt' => 'application/vnd.ms-powerpoint',
+                'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'odt' => 'application/vnd.oasis.opendocument.text',
+                'odp' => 'application/vnd.oasis.opendocument.presentation',
+                'rtf' => 'application/rtf',
+                'txt' => 'text/plain',
                 default => null,
             };
 

@@ -121,6 +121,8 @@ Route::middleware('auth')->group(function () {
         ->name('materi.bab.create');
     Route::post('dashboard/materi/{materi}/bab', [App\Http\Controllers\MateriBabController::class, 'store'])
         ->name('materi.bab.store');
+    Route::get('dashboard/materi/{materi}/bab/{bab}', [App\Http\Controllers\MateriBabController::class, 'show'])
+        ->name('materi.bab.show');
     Route::get('dashboard/materi/{materi}/bab/{bab}/edit', [App\Http\Controllers\MateriBabController::class, 'edit'])
         ->name('materi.bab.edit');
     Route::put('dashboard/materi/{materi}/bab/{bab}', [App\Http\Controllers\MateriBabController::class, 'update'])

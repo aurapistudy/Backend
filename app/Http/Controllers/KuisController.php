@@ -48,6 +48,8 @@ class KuisController extends Controller
 
     public function create()
     {
+        $this->ensureNotSuperAdmin();
+
         $materiList = $this->applyMapelFilterToMateri(
             Materi::with(['mataPelajaran', 'level', 'bab'])->where('status_aktif', true)
         )
@@ -62,6 +64,8 @@ class KuisController extends Controller
 
     public function generateFromMateri(Request $request, GeminiQuizService $geminiQuizService)
     {
+        $this->ensureNotSuperAdmin();
+
         $validated = $request->validate([
             'materi_id' => [
                 'required',
@@ -109,6 +113,8 @@ class KuisController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureNotSuperAdmin();
+
         $validated = $this->validatePayload($request);
         $relationPayload = $this->resolveMateriRelationPayload($validated);
         $this->authorizeKuisMateriId($relationPayload['materi_id'] ?? null);
@@ -139,6 +145,8 @@ class KuisController extends Controller
 
     public function edit(Kuis $kui)
     {
+        $this->ensureNotSuperAdmin();
+
         $kui->load('pertanyaan.opsi');
         $this->authorizeKuisAccess($kui);
         $materiList = $this->applyMapelFilterToMateri(
@@ -152,6 +160,8 @@ class KuisController extends Controller
 
     public function update(Request $request, Kuis $kui)
     {
+        $this->ensureNotSuperAdmin();
+
         $this->authorizeKuisAccess($kui);
         $validated = $this->validatePayload($request, $kui);
         $relationPayload = $this->resolveMateriRelationPayload($validated);
@@ -176,6 +186,8 @@ class KuisController extends Controller
 
     public function destroy(Kuis $kui)
     {
+        $this->ensureNotSuperAdmin();
+
         $this->authorizeKuisAccess($kui);
         $kui->delete();
 
@@ -296,6 +308,8 @@ class KuisController extends Controller
 
     public function hasilUpdate(Request $request, KuisHasil $hasil)
     {
+        $this->ensureNotSuperAdmin();
+
         $hasil->load(['kuis.materi', 'jawaban.pertanyaan']);
         $this->authorizeMapelAccess($hasil->kuis?->materi?->mata_pelajaran_id);
 
@@ -472,5 +486,12 @@ class KuisController extends Controller
 
         $materi = Materi::findOrFail($materiId);
         $this->authorizeMateriAccess($materi);
+    }
+
+    private function ensureNotSuperAdmin(): void
+    {
+        if (Auth::user()?->isSuperAdmin()) {
+            abort(403, 'Super admin hanya dapat melihat data kuis.');
+        }
     }
 }

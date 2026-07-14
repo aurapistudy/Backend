@@ -19,13 +19,16 @@ class MateriBabController extends Controller
     use FiltersByAssignedMapel;
 
     private const PDF_TARGET_MAX_KB = 10240;
+    private const MATERI_FILE_MIMES = 'pdf,doc,docx,ppt,pptx,odt,odp,rtf,txt';
 
     public function create(Materi $materi)
     {
         $this->authorizeMateriAccess($materi);
         $nextUrutan = ((int) $materi->bab()->max('urutan')) + 1;
+        $pdfSourceOptions = $this->buildPdfSourceOptions($materi);
+        $suggestedPdfPageStart = $this->suggestNextPdfPageStart($materi);
 
-        return view('dashboard.materi-bab.create', compact('materi', 'nextUrutan'));
+        return view('dashboard.materi-bab.create', compact('materi', 'nextUrutan', 'pdfSourceOptions', 'suggestedPdfPageStart'));
     }
 
     public function store(Request $request, Materi $materi)
@@ -57,7 +60,10 @@ class MateriBabController extends Controller
             return response()->json($this->formatBabResponse($bab));
         }
 
-        return redirect()->route('materi.show', $materi->id);
+        $bab->loadMissing('kuis');
+        $bab->loadCount('kuis');
+
+        return view('dashboard.materi-bab.show', compact('materi', 'bab'));
     }
 
     public function edit(Materi $materi, MateriBab $bab)
@@ -65,7 +71,10 @@ class MateriBabController extends Controller
         $this->authorizeMateriAccess($materi);
         abort_unless((int) $bab->materi_id === (int) $materi->id, 404);
 
-        return view('dashboard.materi-bab.edit', compact('materi', 'bab'));
+        $pdfSourceOptions = $this->buildPdfSourceOptions($materi);
+        $suggestedPdfPageStart = null;
+
+        return view('dashboard.materi-bab.edit', compact('materi', 'bab', 'pdfSourceOptions', 'suggestedPdfPageStart'));
     }
 
     public function update(Request $request, Materi $materi, MateriBab $bab)
@@ -194,7 +203,8 @@ class MateriBabController extends Controller
             'urutan' => 'required|integer|min:1',
             'tipe_konten' => 'required|in:teks,file',
             'konten_teks' => 'nullable|string|required_if:tipe_konten,teks',
-            'file_path' => ($isCreate ? 'nullable|file|mimes:pdf,doc,docx|max:' . $maxUploadKb . '|required_if:tipe_konten,file' : "nullable|file|mimes:pdf,doc,docx|max:{$maxUploadKb}"),
+            'file_path' => ($isCreate ? 'nullable|file|mimes:' . self::MATERI_FILE_MIMES . '|max:' . $maxUploadKb : 'nullable|file|mimes:' . self::MATERI_FILE_MIMES . "|max:{$maxUploadKb}"),
+            'pdf_source_path' => 'nullable|string',
             'pdf_page_selection' => 'nullable|string',
             'status_aktif' => 'boolean',
         ], [
@@ -203,25 +213,52 @@ class MateriBabController extends Controller
             'tipe_konten.required' => 'Tipe konten wajib dipilih.',
             'konten_teks.required_if' => 'Konten teks wajib diisi jika tipe konten adalah teks.',
             'file_path.required_if' => 'File wajib diupload jika tipe konten adalah file.',
+            'file_path.mimes' => 'Format file materi harus PDF, Word, PowerPoint, ODT/ODP, RTF, atau TXT.',
         ]);
     }
 
     private function prepareBabPayload(Request $request, array $validated, ?MateriBab $bab = null): array
     {
+        if (($validated['tipe_konten'] ?? null) === 'file' && !$request->hasFile('file_path') && !$request->filled('pdf_source_path') && !$bab?->file_path) {
+            throw ValidationException::withMessages([
+                'file_path' => 'Pilih PDF sumber atau upload file baru untuk materi berbentuk file.',
+            ]);
+        }
+
+        if (($validated['tipe_konten'] ?? null) === 'file' && $request->filled('pdf_source_path') && trim((string) $request->input('pdf_page_selection')) === '') {
+            throw ValidationException::withMessages([
+                'pdf_page_selection' => 'Pilih range halaman dari PDF sumber untuk materi ini.',
+            ]);
+        }
+
         if ($request->hasFile('file_path')) {
             $storedFile = $this->storeMateriFile(
                 $request->file('file_path'),
                 $request->input('pdf_page_selection')
             );
 
+            if ($bab?->file_path && $bab->file_path !== $bab?->pdf_source_path && Storage::disk('public')->exists($bab->file_path)) {
+                Storage::disk('public')->delete($bab->file_path);
+            }
+
+            $validated['file_path'] = $storedFile['path'];
+            $validated['pdf_source_path'] = $storedFile['source_path'] ?? null;
+            $validated['pdf_page_selection'] = $request->input('pdf_page_selection');
+        } elseif ($request->filled('pdf_source_path')) {
+            $materiId = (int) ($bab?->materi_id ?? $request->route('materi')?->id ?? 0);
+            $sourcePath = $this->validatePdfSourcePath($request->input('pdf_source_path'), $materiId);
+            $storedFile = $this->storeFromExistingPdfSource($sourcePath, $request->input('pdf_page_selection'));
+
             if ($bab?->file_path && Storage::disk('public')->exists($bab->file_path)) {
                 Storage::disk('public')->delete($bab->file_path);
             }
 
             $validated['file_path'] = $storedFile['path'];
+            $validated['pdf_source_path'] = $sourcePath;
             $validated['pdf_page_selection'] = $request->input('pdf_page_selection');
         } else {
             $validated['file_path'] = $bab?->file_path;
+            $validated['pdf_source_path'] = $bab?->pdf_source_path;
             $validated['pdf_page_selection'] = $bab?->pdf_page_selection;
         }
 
@@ -243,7 +280,7 @@ class MateriBabController extends Controller
 
         if ($extension !== 'pdf' && $originalSize > $maxTargetBytes) {
             throw ValidationException::withMessages([
-                'file_path' => 'File DOC/DOCX maksimal 10 MB. Kompres otomatis hanya diterapkan untuk PDF.',
+                'file_path' => 'File non-PDF maksimal 10 MB. Kompres otomatis hanya diterapkan untuk PDF.',
             ]);
         }
 
@@ -257,6 +294,7 @@ class MateriBabController extends Controller
             $fileName = time() . '_' . $file->getClientOriginalName();
             return [
                 'path' => $file->storeAs('materi/bab', $fileName, 'public'),
+                'source_path' => null,
                 'page_count' => null,
             ];
         }
@@ -277,6 +315,9 @@ class MateriBabController extends Controller
 
         $file->move($tempDirectory, basename($sourcePath));
 
+        $sourceStoredPath = 'materi/sources/' . $uniqueToken . '_' . $safeBaseName . '.pdf';
+        Storage::disk('public')->put($sourceStoredPath, file_get_contents($sourcePath));
+
         $workingPath = $sourcePath;
         $pageCount = $pdfService->getPageCount($sourcePath);
         $selectedPages = $this->parseSelectedPages($pageSelection);
@@ -284,6 +325,7 @@ class MateriBabController extends Controller
         if (!empty($selectedPages)) {
             if ($pageCount === null) {
                 @unlink($sourcePath);
+                Storage::disk('public')->delete($sourceStoredPath);
                 throw ValidationException::withMessages([
                     'file_path' => 'Jumlah halaman PDF tidak bisa dibaca. Pastikan Ghostscript terpasang dengan benar.',
                 ]);
@@ -292,6 +334,7 @@ class MateriBabController extends Controller
             $invalidPage = collect($selectedPages)->first(fn (int $page) => $page < 1 || $page > $pageCount);
             if ($invalidPage !== null) {
                 @unlink($sourcePath);
+                Storage::disk('public')->delete($sourceStoredPath);
                 throw ValidationException::withMessages([
                     'file_path' => "Pilihan halaman tidak valid. Halaman {$invalidPage} berada di luar total {$pageCount} halaman.",
                 ]);
@@ -307,6 +350,7 @@ class MateriBabController extends Controller
                 if (!($selectionResult['success'] ?? false)) {
                     @unlink($sourcePath);
                     @unlink($selectedPath);
+                    Storage::disk('public')->delete($sourceStoredPath);
                     throw ValidationException::withMessages([
                         'file_path' => 'PDF gagal dipotong sesuai halaman yang dicentang.',
                     ]);
@@ -335,6 +379,7 @@ class MateriBabController extends Controller
                 @unlink($selectedPath);
                 @unlink($targetPath);
                 @unlink($bestEffortPath);
+                Storage::disk('public')->delete($sourceStoredPath);
 
                 $message = ($result['tool'] ?? null) === null
                     ? 'PDF di atas 10 MB diterima, tetapi server belum memiliki tool kompres PDF otomatis.'
@@ -360,8 +405,167 @@ class MateriBabController extends Controller
 
         return [
             'path' => $storedPath,
+            'source_path' => $sourceStoredPath,
             'page_count' => $pageCount,
         ];
+    }
+
+    private function storeFromExistingPdfSource(string $sourceStoragePath, ?string $pageSelection = null): array
+    {
+        if (!Storage::disk('public')->exists($sourceStoragePath)) {
+            throw ValidationException::withMessages([
+                'pdf_source_path' => 'PDF sumber tidak ditemukan. Upload ulang file PDF atau pilih sumber lain.',
+            ]);
+        }
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+
+        $tempDirectory = storage_path('app/tmp/pdf-compression');
+        if (!is_dir($tempDirectory)) {
+            mkdir($tempDirectory, 0755, true);
+        }
+
+        $safeBaseName = preg_replace('/[^A-Za-z0-9_\-]/', '_', pathinfo($sourceStoragePath, PATHINFO_FILENAME)) ?: 'bab';
+        $uniqueToken = time() . '_' . uniqid();
+        $sourcePath = $tempDirectory . DIRECTORY_SEPARATOR . $uniqueToken . '_source.pdf';
+        $selectedPath = $tempDirectory . DIRECTORY_SEPARATOR . $uniqueToken . '_selected.pdf';
+        $targetPath = $tempDirectory . DIRECTORY_SEPARATOR . $uniqueToken . '_compressed.pdf';
+        $bestEffortPath = $sourcePath . '.best';
+
+        file_put_contents($sourcePath, Storage::disk('public')->get($sourceStoragePath));
+
+        $pdfService = app(PdfCompressionService::class);
+        $maxTargetBytes = self::PDF_TARGET_MAX_KB * 1024;
+        $workingPath = $sourcePath;
+        $pageCount = $pdfService->getPageCount($sourcePath);
+        $selectedPages = $this->parseSelectedPages($pageSelection);
+
+        if (!empty($selectedPages)) {
+            if ($pageCount === null) {
+                @unlink($sourcePath);
+                throw ValidationException::withMessages([
+                    'pdf_source_path' => 'Jumlah halaman PDF sumber tidak bisa dibaca.',
+                ]);
+            }
+
+            $invalidPage = collect($selectedPages)->first(fn (int $page) => $page < 1 || $page > $pageCount);
+            if ($invalidPage !== null) {
+                @unlink($sourcePath);
+                throw ValidationException::withMessages([
+                    'pdf_page_selection' => "Pilihan halaman tidak valid. Halaman {$invalidPage} berada di luar total {$pageCount} halaman.",
+                ]);
+            }
+
+            if (count($selectedPages) < $pageCount) {
+                $selectionResult = $pdfService->extractSelectedPages(
+                    $sourcePath,
+                    $selectedPath,
+                    $this->buildGhostscriptPageList($selectedPages)
+                );
+
+                if (!($selectionResult['success'] ?? false)) {
+                    @unlink($sourcePath);
+                    @unlink($selectedPath);
+                    throw ValidationException::withMessages([
+                        'pdf_page_selection' => 'PDF sumber gagal dipotong sesuai halaman yang dipilih.',
+                    ]);
+                }
+
+                $workingPath = $selectedPath;
+            }
+
+            $pageCount = count($selectedPages);
+        }
+
+        $workingSize = filesize($workingPath) ?: 0;
+        if ($workingSize > $maxTargetBytes) {
+            $result = $pdfService->compressToTarget($workingPath, $targetPath, $maxTargetBytes);
+            $finalPath = $result['output_path'] ?? $workingPath;
+            $finalSize = $result['final_size'] ?? 0;
+
+            if (!is_file($finalPath) || $finalSize > $maxTargetBytes) {
+                @unlink($sourcePath);
+                @unlink($selectedPath);
+                @unlink($targetPath);
+                @unlink($bestEffortPath);
+                throw ValidationException::withMessages([
+                    'pdf_page_selection' => 'PDF hasil potongan masih terlalu besar atau gagal dikompres hingga 10 MB.',
+                ]);
+            }
+        } else {
+            $finalPath = $workingPath;
+        }
+
+        $storedPath = 'materi/bab/' . time() . '_' . $safeBaseName . '.pdf';
+        Storage::disk('public')->put($storedPath, file_get_contents($finalPath));
+
+        @unlink($sourcePath);
+        @unlink($selectedPath);
+        @unlink($targetPath);
+        @unlink($bestEffortPath);
+
+        return [
+            'path' => $storedPath,
+            'source_path' => $sourceStoragePath,
+            'page_count' => $pageCount,
+        ];
+    }
+
+    private function validatePdfSourcePath(?string $sourcePath, int $materiId): string
+    {
+        $normalized = trim(str_replace('\\', '/', (string) $sourcePath), '/');
+
+        if ($normalized === '' || !str_ends_with(strtolower($normalized), '.pdf')) {
+            throw ValidationException::withMessages([
+                'pdf_source_path' => 'PDF sumber tidak valid.',
+            ]);
+        }
+
+        $known = MateriBab::query()
+            ->where('materi_id', $materiId)
+            ->where('pdf_source_path', $normalized)
+            ->exists();
+
+        if (!$known) {
+            throw ValidationException::withMessages([
+                'pdf_source_path' => 'PDF sumber tidak terhubung dengan mata pelajaran ini.',
+            ]);
+        }
+
+        return $normalized;
+    }
+
+    private function buildPdfSourceOptions(Materi $materi): array
+    {
+        return $materi->bab()
+            ->orderBy('urutan')
+            ->get(['id', 'judul_bab', 'urutan', 'pdf_source_path'])
+            ->filter(fn (MateriBab $bab) => $bab->pdf_source_path && str_ends_with(strtolower($bab->pdf_source_path), '.pdf'))
+            ->map(function (MateriBab $bab) {
+                return [
+                    'path' => $bab->pdf_source_path,
+                    'url' => Storage::url($bab->pdf_source_path),
+                    'label' => 'PDF sumber dari Materi ' . $bab->urutan . ' - ' . $bab->judul_bab,
+                    'file_name' => basename($bab->pdf_source_path),
+                ];
+            })
+            ->unique('path')
+            ->values()
+            ->all();
+    }
+
+    private function suggestNextPdfPageStart(Materi $materi): ?int
+    {
+        $lastSelection = $materi->bab()
+            ->whereNotNull('pdf_page_selection')
+            ->orderByDesc('urutan')
+            ->value('pdf_page_selection');
+
+        $pages = $this->parseSelectedPages($lastSelection);
+
+        return $pages === [] ? null : max($pages) + 1;
     }
 
     private function parseSelectedPages(?string $pageSelection): array

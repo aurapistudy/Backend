@@ -16,6 +16,7 @@ class MateriBab extends Model
         'tipe_konten',
         'konten_teks',
         'file_path',
+        'pdf_source_path',
         'pdf_page_selection',
         'jumlah_halaman',
         'status_aktif',

@@ -219,6 +219,7 @@
         </style>
 </head>
 <body>
+    @php($isSuperAdmin = auth()->user()?->isSuperAdmin())
     <div class="dashboard-container">
         @include('components.dashboard-sidebar')
 
@@ -240,10 +241,12 @@
                             <i data-lucide="clipboard-list"></i>
                             <span>{{ ($search ?? '') !== '' ? 'Hasil pencarian' : 'Total kuis' }}: {{ $kuis->total() }} item</span>
                         </div>
-                        <a href="{{ route('kuis.create') }}" class="add-button">
-                            <i data-lucide="plus"></i>
-                            <span>Tambah Kuis</span>
-                        </a>
+                        @unless($isSuperAdmin)
+                            <a href="{{ route('kuis.create') }}" class="add-button">
+                                <i data-lucide="plus"></i>
+                                <span>Tambah Kuis</span>
+                            </a>
+                        @endunless
                     </div>
 
                     @include('components.list-search', [
@@ -289,13 +292,15 @@
                                                 <a href="{{ route('kuis.show', $item->id) }}" class="action-btn view" title="Lihat">
                                                 <i data-lucide="eye"></i>
                                                 </a>
-                                                <a href="{{ route('kuis.edit', $item->id) }}" class="action-btn edit" title="Edit">
-                                                    <i data-lucide="edit-3"></i>
-                                                </a>
-                                                <button type="button" class="action-btn delete" title="Hapus"
-                                                    onclick="handleDeleteKuis({{ $item->id }}, '{{ addslashes($item->judul) }}')">
-                                                    <i data-lucide="trash-2"></i>
-                                                </button>
+                                                @unless($isSuperAdmin)
+                                                    <a href="{{ route('kuis.edit', $item->id) }}" class="action-btn edit" title="Edit">
+                                                        <i data-lucide="edit-3"></i>
+                                                    </a>
+                                                    <button type="button" class="action-btn delete" title="Hapus"
+                                                        onclick="handleDeleteKuis({{ $item->id }}, '{{ addslashes($item->judul) }}')">
+                                                        <i data-lucide="trash-2"></i>
+                                                    </button>
+                                                @endunless
                                             </div>
                                         </td>
                                     </tr>

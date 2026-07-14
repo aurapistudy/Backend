@@ -204,6 +204,7 @@
     </div>
     @endif
 
+        @if(auth()->user()?->isAdmin())
         <div class="nav-item" data-route="landing">
         <a href="{{ route('landing.index', [], false) }}" data-testid="nav-landing" aria-label="Landing">
             <span class="nav-icon">
@@ -212,7 +213,9 @@
             <span>Pengaturan</span>
         </a>
     </div>
+    @endif
     
+    @if(auth()->user()?->isAdmin())
         <div class="nav-item" data-route="tentang-kami">
         <a href="{{ route('tentang-kami.index', [], false) }}" data-testid="nav-tentang-kami" aria-label="Tentang Kami">
             <span class="nav-icon">
@@ -221,6 +224,7 @@
             <span>Tentang Kami</span>
         </a>
     </div>
+    @endif
 
     <div class="nav-item" data-route="profile">
         <a href="/dashboard/profile" data-testid="nav-profile" aria-label="Profile">
