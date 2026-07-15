@@ -331,12 +331,12 @@
                             </div>
                         @else
                             <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem;">
-                                Belum ada tahun akademik aktif. Atur dulu di menu <strong>Tahun Akademik</strong>.
+                                Belum ada tahun akademik aktif. Atur dulu di menu <strong>Tahun Akademik</strong> sebelum mengatur penugasan guru mapel.
                             </div>
                         @endif
                         <div class="form-group">
-                            <label class="form-label">Mata Pelajaran yang Dikelola <span class="required">*</span></label>
-                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Daftar ini sama dengan item di menu <strong>Mata Pelajaran</strong>.</p>
+                            <label class="form-label">Penugasan Mata Pelajaran <span class="required">*</span></label>
+                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Pilih mata pelajaran yang menjadi penugasan guru pada tahun akademik aktif. Ini mengatur akses guru ke materi dan kuis, bukan hak membuat, mengubah, atau menghapus mata pelajaran.</p>
                             <div style="display: grid; gap: 0.5rem; max-height: 220px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 10px; padding: 0.75rem;">
                                 @php
                                     $selectedMateri = old('materi_ids', $assignedMateriIds ?? []);
@@ -348,7 +348,7 @@
                                         <span>{{ $materi->judul }}</span>
                                     </label>
                                 @empty
-                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif.</span>
+                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif. Tambahkan dulu lewat menu Mata Pelajaran - Tambah.</span>
                                 @endforelse
                             </div>
                             @error('materi_ids')
@@ -437,6 +437,5 @@
 </script>
 </body>
 </html>
-
 
 

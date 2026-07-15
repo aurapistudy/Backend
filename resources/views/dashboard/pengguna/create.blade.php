@@ -320,8 +320,8 @@
                             </div>
                         @endif
                         <div class="form-group">
-                            <label class="form-label">Mata Pelajaran yang Dikelola <span class="required">*</span></label>
-                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Daftar ini sama dengan item di menu <strong>Mata Pelajaran</strong> (materi pembelajaran).</p>
+                            <label class="form-label">Penugasan Mata Pelajaran <span class="required">*</span></label>
+                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Pilih mata pelajaran yang menjadi penugasan guru pada tahun akademik aktif. Ini mengatur akses guru ke materi dan kuis, bukan hak membuat, mengubah, atau menghapus mata pelajaran.</p>
                             <div style="display: grid; gap: 0.5rem; max-height: 220px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 10px; padding: 0.75rem;">
                                 @forelse($materiList as $materi)
                                     <label class="form-checkbox" style="justify-content: flex-start;">
@@ -330,7 +330,7 @@
                                         <span>{{ $materi->judul }}</span>
                                     </label>
                                 @empty
-                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif. Tambahkan dulu lewat menu Mata Pelajaran → Tambah.</span>
+                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif. Tambahkan dulu lewat menu Mata Pelajaran - Tambah.</span>
                                 @endforelse
                             </div>
                             @error('materi_ids')
@@ -419,5 +419,4 @@
 </script>
 </body>
 </html>
-
 

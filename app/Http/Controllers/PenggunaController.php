@@ -52,7 +52,7 @@ class PenggunaController extends Controller
         if ($validated['peran'] === 'guru' && !TahunAkademik::activeId()) {
             return back()
                 ->withInput()
-                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik.']);
+                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik sebelum membuat penugasan guru mapel.']);
         }
 
         $pengguna = Pengguna::create([
@@ -111,7 +111,7 @@ class PenggunaController extends Controller
         if ($validated['peran'] === 'guru' && !TahunAkademik::activeId()) {
             return back()
                 ->withInput()
-                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik.']);
+                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik sebelum mengatur penugasan guru mapel.']);
         }
 
         $updateData = [
@@ -180,8 +180,8 @@ class PenggunaController extends Controller
             'kata_sandi.min' => 'Kata sandi minimal 6 karakter',
             'peran.required' => 'Peran wajib dipilih',
             'peran.in' => 'Peran harus siswa, guru mapel, atau administrator',
-            'materi_ids.required_if' => 'Pilih minimal satu mata pelajaran (dari daftar Materi) untuk guru mapel.',
-            'materi_ids.min' => 'Pilih minimal satu mata pelajaran untuk guru mapel.',
+            'materi_ids.required_if' => 'Pilih minimal satu mata pelajaran untuk penugasan guru.',
+            'materi_ids.min' => 'Pilih minimal satu mata pelajaran untuk penugasan guru.',
         ]);
     }
 
