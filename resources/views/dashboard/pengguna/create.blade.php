@@ -316,12 +316,12 @@
                             </div>
                         @else
                             <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem;">
-                                Belum ada tahun akademik aktif. Atur dulu di menu <strong>Tahun Akademik</strong> sebelum menugaskan guru mapel.
+                                Belum ada tahun akademik aktif. Akun guru tetap bisa dibuat, penugasan mapel bisa diatur nanti setelah tahun akademik aktif tersedia.
                             </div>
                         @endif
                         <div class="form-group">
-                            <label class="form-label">Penugasan Mata Pelajaran <span class="required">*</span></label>
-                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Pilih mata pelajaran yang menjadi penugasan guru pada tahun akademik aktif. Ini mengatur akses guru ke materi dan kuis, bukan hak membuat, mengubah, atau menghapus mata pelajaran.</p>
+                            <label class="form-label">Penugasan Mata Pelajaran <span style="color: #6B7280; font-weight: 400;">(opsional)</span></label>
+                            <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 0.5rem;">Boleh dikosongkan saat membuat akun guru. Kalau mata pelajaran belum ada, guru bisa login dulu untuk membuat materi/mapel, lalu penugasan bisa diatur belakangan.</p>
                             <div style="display: grid; gap: 0.5rem; max-height: 220px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 10px; padding: 0.75rem;">
                                 @forelse($materiList as $materi)
                                     <label class="form-checkbox" style="justify-content: flex-start;">
@@ -330,7 +330,7 @@
                                         <span>{{ $materi->judul }}</span>
                                     </label>
                                 @empty
-                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif. Tambahkan dulu lewat menu Mata Pelajaran - Tambah.</span>
+                                    <span style="color: #6B7280; font-size: 0.9rem;">Belum ada mata pelajaran aktif. Akun guru tetap bisa dibuat tanpa penugasan dulu.</span>
                                 @endforelse
                             </div>
                             @error('materi_ids')
@@ -419,4 +419,3 @@
 </script>
 </body>
 </html>
-

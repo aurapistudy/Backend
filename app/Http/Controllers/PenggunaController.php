@@ -49,12 +49,6 @@ class PenggunaController extends Controller
     {
         $validated = $this->validatePenggunaPayload($request);
 
-        if ($validated['peran'] === 'guru' && !TahunAkademik::activeId()) {
-            return back()
-                ->withInput()
-                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik sebelum membuat penugasan guru mapel.']);
-        }
-
         $pengguna = Pengguna::create([
             'nama' => $validated['nama'],
             'email' => $validated['email'],
@@ -107,12 +101,6 @@ class PenggunaController extends Controller
         $pengguna = Pengguna::with(['siswa', 'guru', 'materiAsGuru'])->findOrFail($id);
 
         $validated = $this->validatePenggunaPayload($request, $pengguna->id, false);
-
-        if ($validated['peran'] === 'guru' && !TahunAkademik::activeId()) {
-            return back()
-                ->withInput()
-                ->withErrors(['materi_ids' => 'Belum ada tahun akademik aktif. Atur dulu di menu Tahun Akademik sebelum mengatur penugasan guru mapel.']);
-        }
 
         $updateData = [
             'nama' => $validated['nama'],
@@ -169,7 +157,7 @@ class PenggunaController extends Controller
             'nama_sekolah' => 'nullable|string|max:150',
             'jenjang' => 'nullable|string|max:50',
             'catatan' => 'nullable|string',
-            'materi_ids' => 'required_if:peran,guru|array|min:1',
+            'materi_ids' => 'nullable|array',
             'materi_ids.*' => 'integer|exists:materi,id',
         ], [
             'nama.required' => 'Nama wajib diisi',
@@ -180,8 +168,7 @@ class PenggunaController extends Controller
             'kata_sandi.min' => 'Kata sandi minimal 6 karakter',
             'peran.required' => 'Peran wajib dipilih',
             'peran.in' => 'Peran harus siswa, guru mapel, atau administrator',
-            'materi_ids.required_if' => 'Pilih minimal satu mata pelajaran untuk penugasan guru.',
-            'materi_ids.min' => 'Pilih minimal satu mata pelajaran untuk penugasan guru.',
+            'materi_ids.array' => 'Format penugasan mata pelajaran tidak valid.',
         ]);
     }
 
@@ -217,10 +204,6 @@ class PenggunaController extends Controller
         }
 
         if ($validated['peran'] === 'guru') {
-            if (!TahunAkademik::activeId()) {
-                return;
-            }
-
             if ($pengguna->guru) {
                 $pengguna->guru->update([
                     'nama_sekolah' => $validated['nama_sekolah'] ?? null,
@@ -232,8 +215,11 @@ class PenggunaController extends Controller
                 ]);
             }
 
-            $materiIds = array_map('intval', $request->input('materi_ids', []));
-            $pengguna->syncMateriAsGuru($materiIds);
+            if (TahunAkademik::activeId()) {
+                $materiIds = array_map('intval', $request->input('materi_ids', []));
+                $pengguna->syncMateriAsGuru($materiIds);
+            }
+
             $pengguna->mataPelajaranAsGuru()->detach();
 
             return;
