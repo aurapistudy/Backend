@@ -117,6 +117,16 @@ Route::middleware('auth')->group(function () {
         ->name('materi.generate-cover-preview');
     Route::delete('dashboard/materi/cover-preview/discard', [App\Http\Controllers\MateriController::class, 'discardCoverPreview'])
         ->name('materi.discard-cover-preview');
+    Route::get('dashboard/materi/{materi}/bab/import', [App\Http\Controllers\MateriBabImportController::class, 'showForm'])
+        ->name('materi.bab.import');
+    Route::post('dashboard/materi/temp-detect-pdf', [App\Http\Controllers\MateriBabImportController::class, 'tempDetect'])
+        ->name('materi.bab.temp-detect');
+    Route::post('dashboard/materi/detect-existing-pdf', [App\Http\Controllers\MateriBabImportController::class, 'detectExistingPdf'])
+        ->name('materi.bab.detect-existing');
+    Route::post('dashboard/materi/{materi}/bab/import/detect', [App\Http\Controllers\MateriBabImportController::class, 'detect'])
+        ->name('materi.bab.import.detect');
+    Route::post('dashboard/materi/{materi}/bab/import/store', [App\Http\Controllers\MateriBabImportController::class, 'store'])
+        ->name('materi.bab.import.store');
     Route::get('dashboard/materi/{materi}/bab/create', [App\Http\Controllers\MateriBabController::class, 'create'])
         ->name('materi.bab.create');
     Route::post('dashboard/materi/{materi}/bab', [App\Http\Controllers\MateriBabController::class, 'store'])

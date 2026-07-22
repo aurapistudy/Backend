@@ -20,6 +20,7 @@
     let selectedPdfPages = new Set();
     let totalPdfPages = 0;
     let isSyncingPdfInputs = false;
+    let currentPdfDoc = null;
 
     const pdfJsAvailable = typeof window.pdfjsLib !== 'undefined';
 
@@ -152,6 +153,9 @@
             pdfSelectionEmpty.textContent = 'Preview halaman hanya tersedia untuk file PDF.';
             selectedPdfPages = new Set();
             totalPdfPages = 0;
+            currentPdfDoc = null;
+            const panel = document.getElementById('pdf_detected_chapters_panel');
+            if (panel) panel.style.display = 'none';
             updatePdfSelectionSummary();
             return;
         }
@@ -160,11 +164,16 @@
         pdfSelectionEmpty.style.display = 'none';
         selectedPdfPages = new Set();
         totalPdfPages = 0;
+        currentPdfDoc = null;
+        const panel = document.getElementById('pdf_detected_chapters_panel');
+        if (panel) panel.style.display = 'none';
         updatePdfSelectionSummary();
         try {
             const documentSource = isFileObject ? { data: await source.arrayBuffer() } : source;
             const pdf = await window.pdfjsLib.getDocument(documentSource).promise;
+            currentPdfDoc = pdf;
             totalPdfPages = pdf.numPages;
+            detectPdfChapters(source);
             selectedPdfPages = new Set(Array.from(initialSelectedPdfPages).filter((pageNumber) => pageNumber <= totalPdfPages));
             for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
                 const page = await pdf.getPage(pageNumber);
@@ -191,6 +200,9 @@
             pdfSelectionEmpty.textContent = 'Preview PDF gagal dimuat.';
             selectedPdfPages = new Set();
             totalPdfPages = 0;
+            currentPdfDoc = null;
+            const panel = document.getElementById('pdf_detected_chapters_panel');
+            if (panel) panel.style.display = 'none';
             updatePdfSelectionSummary();
             syncPageRangeInputsFromSelection();
         } finally {
@@ -330,6 +342,159 @@ if (tipeKontenSelect) {
         });
     }
 
+    async function renderChapterThumbnail(pdfDoc, pageNumber, container) {
+        try {
+            if (pageNumber > pdfDoc.numPages) return;
+            const page = await pdfDoc.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 0.15 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            await page.render({ canvasContext: context, viewport }).promise;
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        } catch (e) {
+            console.error('Failed to render thumbnail:', e);
+        }
+    }
+
+    function buildChapterCard(judul, halamanAwal, halamanAkhir, isOptional = false) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'chapter-detect-card' + (isOptional ? ' optional' : '');
+
+        const thumb = document.createElement('div');
+        thumb.className = 'chapter-detect-thumb';
+        const iconName = isOptional ? 'book-marked' : 'file-text';
+        thumb.innerHTML = `<i data-lucide="${iconName}" style="width: 20px; height: 20px; color: ${isOptional ? '#6366F1' : '#94a3b8'};"></i>`;
+
+        const info = document.createElement('div');
+        info.className = 'chapter-detect-info';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'chapter-detect-title';
+        titleEl.textContent = judul;
+        titleEl.title = judul;
+
+        const rangeEl = document.createElement('div');
+        rangeEl.className = 'chapter-detect-range';
+        rangeEl.textContent = `Halaman ${halamanAwal} - ${halamanAkhir}`;
+
+        info.appendChild(titleEl);
+        info.appendChild(rangeEl);
+        card.appendChild(thumb);
+        card.appendChild(info);
+
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.chapter-detect-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+
+            const judulInput = document.querySelector('input[name="judul_bab"]');
+            if (judulInput) judulInput.value = judul;
+
+            if (pdfPageStartInput) pdfPageStartInput.value = halamanAwal;
+            if (pdfPageEndInput) pdfPageEndInput.value = halamanAkhir;
+
+            applyRangeSelection();
+
+            const targetCard = pdfPagesGrid.querySelector(`.pdf-page-card[data-page-number="${halamanAwal}"]`);
+            if (targetCard) targetCard.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        });
+
+        return { card, thumb };
+    }
+
+    async function detectPdfChapters(source) {
+        const chaptersPanel = document.getElementById('pdf_detected_chapters_panel');
+        const chaptersList = document.getElementById('pdf_detected_chapters_list');
+        const chaptersLoading = document.getElementById('pdf_detected_chapters_loading');
+        const extrasSection = document.getElementById('pdf_detected_extras_section');
+        const extrasList = document.getElementById('pdf_detected_extras_list');
+
+        if (!chaptersPanel || !chaptersList || !chaptersLoading) return;
+
+        chaptersPanel.style.display = 'block';
+        chaptersList.innerHTML = '';
+        if (extrasSection) extrasSection.style.display = 'none';
+        if (extrasList) extrasList.innerHTML = '';
+        chaptersLoading.style.display = 'block';
+
+        const formData = new FormData();
+        const csrfTokenInput = document.querySelector('input[name="_token"]');
+        formData.append('_token', csrfTokenInput ? csrfTokenInput.value : '');
+
+        let endpoint = '';
+        const isFileObject = typeof File !== 'undefined' && source instanceof File;
+
+        if (isFileObject) {
+            formData.append('pdf_file', source);
+            endpoint = '{{ route("materi.bab.temp-detect") }}';
+        } else {
+            const selectedOption = pdfSourceSelect?.selectedOptions?.[0];
+            const path = selectedOption ? selectedOption.value : '';
+            if (!path) {
+                chaptersPanel.style.display = 'none';
+                return;
+            }
+            formData.append('pdf_source_path', path);
+            endpoint = '{{ route("materi.bab.detect-existing") }}';
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await response.json();
+            chaptersLoading.style.display = 'none';
+
+            if (data.success && data.chapters && data.chapters.length > 0) {
+                // --- Render main chapter cards ---
+                data.chapters.forEach(ch => {
+                    const { card, thumb } = buildChapterCard(ch.judul_bab, ch.halaman_awal, ch.halaman_akhir, false);
+                    chaptersList.appendChild(card);
+                    if (currentPdfDoc) renderChapterThumbnail(currentPdfDoc, ch.halaman_awal, thumb);
+                });
+
+                // --- Compute and render optional front / back matter ---
+                const pageCount = Number.isInteger(data.page_count) ? data.page_count : (totalPdfPages || null);
+                const firstChapter = data.chapters[0];
+                const lastChapter = data.chapters[data.chapters.length - 1];
+                let hasExtras = false;
+
+                // Front matter: page 1 up to (first chapter start - 1)
+                if (firstChapter.halaman_awal > 1) {
+                    const frontEnd = firstChapter.halaman_awal - 1;
+                    const { card, thumb } = buildChapterCard('Pendahuluan (Cover, Daftar Isi, dll.)', 1, frontEnd, true);
+                    if (extrasList) extrasList.appendChild(card);
+                    if (currentPdfDoc) renderChapterThumbnail(currentPdfDoc, 1, thumb);
+                    hasExtras = true;
+                }
+
+                // Back matter: (last chapter end + 1) to total pages
+                if (pageCount && lastChapter.halaman_akhir < pageCount) {
+                    const backStart = lastChapter.halaman_akhir + 1;
+                    const { card, thumb } = buildChapterCard('Penutup (Daftar Pustaka, Profil Penulis, dll.)', backStart, pageCount, true);
+                    if (extrasList) extrasList.appendChild(card);
+                    if (currentPdfDoc) renderChapterThumbnail(currentPdfDoc, backStart, thumb);
+                    hasExtras = true;
+                }
+
+                if (hasExtras && extrasSection) extrasSection.style.display = 'block';
+
+                lucide.createIcons();
+            } else {
+                chaptersPanel.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to detect chapters:', error);
+            chaptersLoading.style.display = 'none';
+            chaptersPanel.style.display = 'none';
+        }
+    }
 
     lucide.createIcons();
 </script>

@@ -85,8 +85,9 @@ class MateriController extends Controller
             ->orderBy('nama')
             ->get();
         $tahunAktif = TahunAkademik::active();
+        $maxUploadKb = $this->getServerUploadLimitInKb();
 
-        return view('dashboard.materi.create', compact('levels', 'mataPelajarans', 'tahunAktif'));
+        return view('dashboard.materi.create', compact('levels', 'mataPelajarans', 'tahunAktif', 'maxUploadKb'));
     }
 
     /**
@@ -135,6 +136,7 @@ class MateriController extends Controller
             'tipe_konten.required' => 'Tipe konten Materi 1 wajib dipilih',
             'konten_teks.required_if' => 'Konten teks wajib diisi jika tipe konten adalah teks',
             'file_path.required_if' => 'File wajib diupload jika tipe konten adalah file',
+            'file_path.uploaded' => "File gagal diupload. Ukuran file kemungkinan melebihi batas server {$maxUploadKb} KB. Naikkan upload_max_filesize/post_max_size atau kompres PDF lebih dulu.",
             'file_path.file' => 'File materi tidak valid. Pilih file PDF, DOC, atau DOCX.',
             'file_path.mimes' => 'Format file materi harus PDF, Word, PowerPoint, ODT/ODP, RTF, atau TXT.',
             'file_path.max' => 'Ukuran file materi melebihi batas upload server.',

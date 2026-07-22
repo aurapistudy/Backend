@@ -592,6 +592,82 @@
             background: linear-gradient(180deg, #FFFCF2 0%, #FFFFFF 100%);
         }
 
+        .pdf-flow-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--color-text);
+            margin-bottom: 0.35rem;
+        }
+
+        .pdf-flow-copy {
+            color: var(--color-text-light);
+            font-size: 0.9rem;
+            line-height: 1.55;
+            margin-bottom: 1rem;
+        }
+
+        .pdf-mode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .pdf-mode-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            border: 1px solid rgba(17, 24, 39, 0.1);
+            border-radius: 14px;
+            background: #FFFFFF;
+            padding: 0.95rem;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .pdf-mode-card.active {
+            border-color: var(--color-accent);
+            box-shadow: 0 10px 22px rgba(248, 184, 3, 0.16);
+        }
+
+        .pdf-mode-card input {
+            margin-top: 0.2rem;
+            accent-color: var(--color-accent);
+        }
+
+        .pdf-mode-title {
+            display: block;
+            font-weight: 800;
+            color: var(--color-text);
+            margin-bottom: 0.25rem;
+        }
+
+        .pdf-mode-desc {
+            display: block;
+            color: var(--color-text-light);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .pdf-plan-panel {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid rgba(17, 24, 39, 0.08);
+            border-radius: 14px;
+            background: #FFFFFF;
+        }
+
+        .pdf-plan-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.85rem;
+        }
+
+        .pdf-plan-actions .btn {
+            flex: 0 0 auto;
+        }
+
         .pdf-selection-toolbar {
             display: flex;
             justify-content: space-between;
@@ -632,9 +708,7 @@
         }
 
         .pdf-pages-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem;
+            display: none;
         }
 
         .pdf-page-card {
@@ -730,7 +804,63 @@
             border-radius: 14px;
         }
 
-        @media (max-width: 640px) {.book-hero-grid { grid-template-columns: 1fr; } .cover-modal-grid { grid-template-columns: 1fr; } .cover-ai-preview { grid-template-columns: 1fr; } .pdf-selection-range { grid-template-columns: 1fr; } .pdf-pages-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+        @media (max-width: 640px) {.book-hero-grid { grid-template-columns: 1fr; } .cover-modal-grid { grid-template-columns: 1fr; } .cover-ai-preview { grid-template-columns: 1fr; } .pdf-selection-range, .pdf-mode-grid { grid-template-columns: 1fr; }}
+
+        /* === Chapter auto-detect cards (create page) === */
+        .chapter-detect-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border: 2px solid rgba(17, 24, 39, 0.08);
+            border-radius: 12px;
+            background: #FFFFFF;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            width: 100%;
+        }
+        .chapter-detect-card:hover {
+            border-color: var(--color-accent);
+            background: #FFFDF5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(248, 184, 3, 0.15);
+        }
+        .chapter-detect-card.active { border-color: #E6A500; background: #FFF9E6; }
+        .chapter-detect-thumb {
+            width: 46px;
+            height: 60px;
+            border-radius: 6px;
+            background: #F1F5F9;
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .chapter-detect-thumb canvas { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .chapter-detect-info { display: flex; flex-direction: column; min-width: 0; }
+        .chapter-detect-title {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: var(--color-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chapter-detect-range { font-size: 0.78rem; color: #94a3b8; margin-top: 0.15rem; }
+        .chapter-detect-card.optional { border-color: rgba(99,102,241,0.2); background: #F5F3FF; }
+        .chapter-detect-card.optional:hover { border-color: #6366F1; background: #EEF2FF; box-shadow: 0 4px 12px rgba(99,102,241,0.15); }
+        .chapter-detect-card.optional.active { border-color: #4F46E5; background: #E0E7FF; }
+        .chapter-detect-card.optional .chapter-detect-thumb { background: #E0E7FF; }
+        .chapter-detect-card.optional .chapter-detect-title { color: #3730A3; }
+        .chapter-optional-label {
+            font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.05em; color: #6366F1;
+            margin-top: 1rem; margin-bottom: 0.5rem;
+            display: flex; align-items: center; gap: 0.35rem;
+        }
         </style>
 </head>
 <body>
@@ -1002,8 +1132,29 @@
                         <small class="hint">PDF di atas 10 MB akan dicoba dikompres otomatis sampai 10 MB. File Word, PowerPoint, ODT/ODP, RTF, dan TXT tetap maksimal 10 MB.</small>
                         <input type="hidden" name="pdf_page_selection" id="pdf_page_selection" value="">
                         <div id="pdf_selection_panel" class="pdf-selection-panel" style="display: none;">
-                            <div id="pdf_selection_loading" class="pdf-selection-loading" style="display: none;">Sedang menyiapkan preview halaman PDF...</div>
-                            <div class="pdf-selection-range">
+                            <div id="pdf_selection_loading" class="pdf-selection-loading" style="display: none;">Sedang membaca jumlah halaman PDF...</div>
+                            <div class="pdf-flow-title">Pilih cara menyimpan PDF Materi 1</div>
+                            <div id="pdf_selection_summary" class="pdf-selection-summary" style="margin-bottom: 0.8rem;">Belum ada halaman PDF yang dimuat.</div>
+
+                            <div class="pdf-mode-grid">
+                                <label class="pdf-mode-card active" data-pdf-mode-card="all">
+                                    <input type="radio" name="pdf_save_mode" value="all" checked>
+                                    <span>
+                                        <span class="pdf-mode-title">Simpan PDF utuh</span>
+                                        <span class="pdf-mode-desc">Pakai semua halaman sebagai Materi 1. Ini pilihan paling sederhana.</span>
+                                    </span>
+                                </label>
+
+                                <label class="pdf-mode-card" data-pdf-mode-card="range">
+                                    <input type="radio" name="pdf_save_mode" value="range">
+                                    <span>
+                                        <span class="pdf-mode-title">Ambil halaman tertentu</span>
+                                        <span class="pdf-mode-desc">Isi halaman awal dan akhir kalau Materi 1 cuma sebagian dari PDF.</span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="pdf-selection-range" id="pdf_range_fields" style="display: none;">
                                 <div>
                                     <label class="form-label">Halaman Awal</label>
                                     <input type="number" id="pdf_page_start" class="form-input" min="1" placeholder="Contoh: 3">
@@ -1013,16 +1164,45 @@
                                     <input type="number" id="pdf_page_end" class="form-input" min="1" placeholder="Contoh: 12">
                                 </div>
                             </div>
-                            <div class="pdf-selection-toolbar">
-                                <div id="pdf_selection_summary" class="pdf-selection-summary">Belum ada halaman PDF yang dimuat.</div>
-                                <div class="pdf-selection-actions">
-                                    <button type="button" id="pdf_select_all" class="pdf-action-btn">Pilih Semua</button>
-                                    <button type="button" id="pdf_clear_all" class="pdf-action-btn">Reset Pilihan</button>
+                            <div id="pdf_pages_grid" class="pdf-pages-grid"></div>
+                            <div id="pdf_selection_empty" class="pdf-selection-empty">PDF akan disimpan utuh. Bagian Materi Tambahan di bawah boleh dilewati jika tidak ingin membuat materi lain.</div>
+                            <!-- Auto-detect chapters panel -->
+                            <div id="pdf_detect_panel" style="display:none; margin-top:1rem; padding:1rem; border:1px solid rgba(17,24,39,0.08); border-radius:14px; background:linear-gradient(180deg,#F8FAFC 0%,#FFFFFF 100%);">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.25rem;">
+                                    <div style="font-weight:700; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem;">
+                                        <i data-lucide="sparkles" style="width:16px;height:16px;color:#E6A500;"></i>
+                                        Bab Berhasil Terdeteksi
+                                    </div>
+                                </div>
+                                <span class="hint" style="display:block; margin-bottom:0.85rem;">Bab pertama otomatis diisi sebagai Materi 1. Bab sisanya sudah disiapkan di bagian Materi Tambahan di bawah. Anda bisa klik card lain jika ingin menukar urutan Materi 1.</span>
+
+                                <div id="pdf_detect_loading" class="pdf-selection-loading" style="display:none;">
+                                    Menganalisis bab dari PDF... <span style="font-weight:400;">(mungkin butuh beberapa detik)</span>
+                                </div>
+
+                                <div id="pdf_detect_chapters_list" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0.65rem; margin-bottom:0.5rem;">
+                                    <!-- Main chapter cards -->
+                                </div>
+
+                                <div id="pdf_detect_extras_section" style="display:none;">
+                                    <div class="chapter-optional-label">
+                                        <i data-lucide="layers" style="width:14px;height:14px;"></i>
+                                        Bagian Tambahan (Opsional)
+                                    </div>
+                                    <span class="hint" style="display:block;margin-bottom:0.65rem;">Halaman di luar bab utama — cover, daftar isi, penutup, dll. Klik jika ingin ditambahkan sebagai Materi 1.</span>
+                                    <div id="pdf_detect_extras_list" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0.65rem;">
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed rgba(17,24,39,0.1); display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: #059669; display:flex; align-items:center; gap:0.4rem;">
+                                        <i data-lucide="check-circle-2" style="width:16px;height:16px;"></i> Pengelompokan bab otomatis selesai.
+                                    </span>
+                                    <button type="button" id="scroll_to_builder_btn" class="btn btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.85rem; border-radius: 8px;">
+                                        Lihat Pembagian Materi di Bawah <i data-lucide="arrow-down" style="width:14px;height:14px;"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <div id="pdf_pages_grid" class="pdf-pages-grid"></div>
-                            <div id="pdf_selection_empty" class="pdf-selection-empty">Pilih file PDF untuk menampilkan halaman dan centang halaman yang ingin disimpan.</div>
-                            <small class="hint">Kalau semua halaman dicentang, sistem akan menyimpan seluruh PDF. Kalau hanya sebagian yang dicentang, sistem menyimpan halaman terpilih saja.</small>
                         </div>
                         @error('file_path')
                             <span class="error-message">{{ $message }}</span>
@@ -1086,8 +1266,13 @@
         const pdfPageSelectionInput = document.getElementById('pdf_page_selection');
         const pdfPageStartInput = document.getElementById('pdf_page_start');
         const pdfPageEndInput = document.getElementById('pdf_page_end');
-        const pdfSelectAllButton = document.getElementById('pdf_select_all');
-        const pdfClearAllButton = document.getElementById('pdf_clear_all');
+        const pdfRangeFields = document.getElementById('pdf_range_fields');
+        const pdfSaveModeInputs = document.querySelectorAll('input[name="pdf_save_mode"]');
+        const pdfModeCards = document.querySelectorAll('[data-pdf-mode-card]');
+        const pdfChapterPlanInput = document.getElementById('pdf_chapter_plan');
+        const applyPdfPlanButton = document.getElementById('apply_pdf_plan_btn');
+        const serverUploadLimitKb = @json($maxUploadKb ?? 40960);
+        const serverUploadLimitBytes = serverUploadLimitKb * 1024;
         let selectedPdfPages = new Set();
         let totalPdfPages = 0;
         let isSyncingPdfInputs = false;
@@ -1105,9 +1290,52 @@
                 return;
             }
 
+            const selectedMode = getPdfSaveMode();
             const selectedCount = selectedPdfPages.size;
-            pdfSelectionSummary.textContent = `Terpilih ${selectedCount} dari ${totalPdfPages} halaman.`;
-            pdfPageSelectionInput.value = Array.from(selectedPdfPages).sort((a, b) => a - b).join(',');
+
+            if (selectedMode === 'all') {
+                pdfSelectionSummary.textContent = `Mode: simpan PDF utuh (${totalPdfPages} halaman).`;
+                pdfPageSelectionInput.value = '';
+                return;
+            }
+
+            pdfSelectionSummary.textContent = selectedCount > 0
+                ? `Mode: ambil ${selectedCount} dari ${totalPdfPages} halaman.`
+                : `Mode: ambil halaman tertentu. Isi halaman awal dan akhir.`;
+            pdfPageSelectionInput.value = selectedCount === 0 || selectedCount === totalPdfPages
+                ? ''
+                : Array.from(selectedPdfPages).sort((a, b) => a - b).join(',');
+        }
+
+        function getPdfSaveMode() {
+            const checked = document.querySelector('input[name="pdf_save_mode"]:checked');
+            return checked ? checked.value : 'all';
+        }
+
+        function syncPdfModeUi() {
+            const selectedMode = getPdfSaveMode();
+            pdfModeCards.forEach((card) => {
+                card.classList.toggle('active', card.dataset.pdfModeCard === selectedMode);
+            });
+
+            if (pdfRangeFields) {
+                pdfRangeFields.style.display = selectedMode === 'range' ? 'grid' : 'none';
+            }
+
+            if (selectedMode === 'all') {
+                selectedPdfPages = totalPdfPages > 0
+                    ? new Set(Array.from({ length: totalPdfPages }, (_, index) => index + 1))
+                    : new Set();
+                if (pdfPageStartInput) pdfPageStartInput.value = '';
+                if (pdfPageEndInput) pdfPageEndInput.value = '';
+                if (pdfSelectionEmpty && totalPdfPages > 0) {
+                    pdfSelectionEmpty.textContent = 'PDF akan disimpan utuh sebagai Materi 1. Bagian Materi Tambahan di bawah boleh dilewati.';
+                }
+            } else if (pdfSelectionEmpty && totalPdfPages > 0) {
+                pdfSelectionEmpty.textContent = 'Isi Halaman Awal dan Halaman Akhir untuk mengambil sebagian PDF sebagai Materi 1.';
+            }
+
+            updatePdfSelectionSummary();
         }
 
         function syncPageRangeInputsFromSelection() {
@@ -1117,7 +1345,7 @@
 
             isSyncingPdfInputs = true;
 
-            if (selectedPdfPages.size === 0) {
+            if (selectedPdfPages.size === 0 || selectedPdfPages.size === totalPdfPages) {
                 pdfPageStartInput.value = '';
                 pdfPageEndInput.value = '';
             } else {
@@ -1147,14 +1375,16 @@
                 return;
             }
 
+            const selectedMode = getPdfSaveMode();
+            if (selectedMode !== 'range') {
+                return;
+            }
+
             const startValue = Number.parseInt(pdfPageStartInput.value, 10);
             const endValue = Number.parseInt(pdfPageEndInput.value, 10);
 
             if (!startValue && !endValue) {
                 selectedPdfPages = new Set();
-                for (let pageNumber = 1; pageNumber <= totalPdfPages; pageNumber++) {
-                    updatePageCardVisual(pageNumber, false);
-                }
                 updatePdfSelectionSummary();
                 return;
             }
@@ -1177,11 +1407,9 @@
                 if (isSelected) {
                     selectedPdfPages.add(pageNumber);
                 }
-                updatePageCardVisual(pageNumber, isSelected);
             }
 
             updatePdfSelectionSummary();
-            syncPageRangeInputsFromSelection();
         }
 
         function renderPdfPageCard(pageNumber, viewport, canvas) {
@@ -1228,10 +1456,15 @@
             const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
             pdfSelectionPanel.style.display = isPdf ? 'block' : 'none';
 
+            if (file.size > serverUploadLimitBytes && pdfSelectionEmpty) {
+                pdfSelectionEmpty.style.display = 'block';
+                pdfSelectionEmpty.textContent = `File ini ${(file.size / 1024 / 1024).toFixed(1)} MB, sementara batas upload server sekitar ${(serverUploadLimitBytes / 1024 / 1024).toFixed(0)} MB. File harus dikompres atau batas upload PHP dinaikkan agar bisa disimpan.`;
+            }
+
             if (!isPdf) {
                 pdfPagesGrid.innerHTML = '';
                 pdfSelectionEmpty.style.display = 'block';
-                pdfSelectionEmpty.textContent = 'Preview halaman hanya tersedia untuk file PDF.';
+                pdfSelectionEmpty.textContent = 'Pilihan halaman hanya tersedia untuk file PDF.';
                 selectedPdfPages = new Set();
                 totalPdfPages = 0;
                 updatePdfSelectionSummary();
@@ -1240,7 +1473,8 @@
 
             pdfSelectionLoading.style.display = 'block';
             pdfPagesGrid.innerHTML = '';
-            pdfSelectionEmpty.style.display = 'none';
+            pdfSelectionEmpty.style.display = 'block';
+            pdfSelectionEmpty.textContent = 'PDF sedang dibaca. Setelah selesai, pilih mode simpan di bawah.';
             selectedPdfPages = new Set();
             totalPdfPages = 0;
             updatePdfSelectionSummary();
@@ -1249,34 +1483,18 @@
                 const buffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
                 totalPdfPages = pdf.numPages;
-                selectedPdfPages = new Set();
+                selectedPdfPages = new Set(Array.from({ length: totalPdfPages }, (_, index) => index + 1));
+                pdfSelectionEmpty.textContent = 'PDF akan disimpan utuh sebagai Materi 1. Bagian Materi Tambahan di bawah boleh dilewati.';
 
-                for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-                    const page = await pdf.getPage(pageNumber);
-                    const viewport = page.getViewport({ scale: 0.35 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-
-                    await page.render({
-                        canvasContext: context,
-                        viewport,
-                    }).promise;
-
-                    pdfPagesGrid.appendChild(renderPdfPageCard(pageNumber, viewport, canvas));
-                }
-
-                updatePdfSelectionSummary();
-                syncPageRangeInputsFromSelection();
+                syncPdfModeUi();
             } catch (error) {
                 pdfPagesGrid.innerHTML = '';
                 pdfSelectionEmpty.style.display = 'block';
-                pdfSelectionEmpty.textContent = 'Preview PDF gagal dimuat. Kamu masih bisa upload file, tetapi pilih halaman tidak tersedia untuk file ini.';
+                pdfSelectionEmpty.textContent = 'Jumlah halaman PDF gagal dibaca. Kamu masih bisa upload file utuh tanpa memilih halaman.';
                 selectedPdfPages = new Set();
                 totalPdfPages = 0;
                 updatePdfSelectionSummary();
-                syncPageRangeInputsFromSelection();
+                syncPdfModeUi();
             } finally {
                 pdfSelectionLoading.style.display = 'none';
             }
@@ -1332,6 +1550,12 @@
                 const currentFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
                 if (currentFile) {
                     loadPdfPreview(currentFile);
+                    const isPdf = currentFile.type === 'application/pdf' || currentFile.name.toLowerCase().endsWith('.pdf');
+                    if (isPdf) {
+                        detectChaptersForCreate(currentFile);
+                    } else {
+                        resetCreateDetectPanel();
+                    }
                 } else {
                     pdfSelectionPanel.style.display = 'none';
                     pdfPagesGrid.innerHTML = '';
@@ -1339,8 +1563,99 @@
                     totalPdfPages = 0;
                     updatePdfSelectionSummary();
                     syncPageRangeInputsFromSelection();
+                    resetCreateDetectPanel();
                 }
             });
+        }
+
+        function pagesToSelection(start, end) {
+            const pages = [];
+            for (let page = start; page <= end; page++) {
+                pages.push(page);
+            }
+            return pages.join(',');
+        }
+
+        function parsePlannedChapterLine(line, index) {
+            const trimmed = line.trim();
+            if (!trimmed) return null;
+
+            const rangeMatch = trimmed.match(/(?:\||,|;|:)?\s*(\d+)\s*(?:-|–|—|sampai|sd|s\/d|to)\s*(\d+)\s*$/i);
+            if (!rangeMatch) {
+                return { title: trimmed, start: null, end: null };
+            }
+
+            const start = parseInt(rangeMatch[1], 10);
+            const end = parseInt(rangeMatch[2], 10);
+            const title = trimmed.slice(0, rangeMatch.index).replace(/[|,;:\s]+$/, '').trim() || `Bab ${index + 1}`;
+
+            return { title, start, end };
+        }
+
+        function setPdfSaveMode(mode) {
+            const input = document.querySelector(`input[name="pdf_save_mode"][value="${mode}"]`);
+            if (input) {
+                input.checked = true;
+            }
+            syncPdfModeUi();
+        }
+
+        function applyPdfChapterPlan() {
+            const chapters = (pdfChapterPlanInput?.value || '')
+                .split(/\r?\n/)
+                .map(parsePlannedChapterLine)
+                .filter(Boolean);
+
+            if (chapters.length === 0) {
+                alert('Tempel rencana bab dulu. Contoh: Bab 1 | 1-12');
+                return;
+            }
+
+            const invalid = chapters.find((chapter) => !chapter.start || !chapter.end || chapter.start > chapter.end);
+            if (invalid) {
+                alert(`Rencana "${invalid.title}" belum punya range halaman yang valid. Pakai format: Judul Bab | 1-12`);
+                return;
+            }
+
+            if (totalPdfPages > 0) {
+                const outsidePdf = chapters.find((chapter) => chapter.end > totalPdfPages);
+                if (outsidePdf) {
+                    alert(`Range "${outsidePdf.title}" melewati total PDF (${totalPdfPages} halaman).`);
+                    return;
+                }
+            }
+
+            const firstChapter = chapters[0];
+            const firstTitleInput = document.querySelector('input[name="judul_bab_pertama"]');
+            if (firstTitleInput) {
+                firstTitleInput.value = firstChapter.title;
+            }
+            if (pdfPageStartInput) pdfPageStartInput.value = firstChapter.start;
+            if (pdfPageEndInput) pdfPageEndInput.value = firstChapter.end;
+            setPdfSaveMode('range');
+            selectedPdfPages = new Set(Array.from({ length: firstChapter.end - firstChapter.start + 1 }, (_, offset) => firstChapter.start + offset));
+            updatePdfSelectionSummary();
+
+            if (chapterList) {
+                chapterList.innerHTML = '';
+                chapters.slice(1).forEach((chapter, offset) => {
+                    chapterList.appendChild(buildChapterItem(offset, {
+                        judul_bab: chapter.title,
+                        urutan: offset + 2,
+                        tipe_konten: 'file',
+                        pdf_source_mode: 'first_bab',
+                        pdf_page_selection: pagesToSelection(chapter.start, chapter.end),
+                        status_aktif: true,
+                    }));
+                });
+                renumberChapterItems();
+            }
+
+            alert(`${chapters.length} materi berhasil disiapkan dari satu PDF. Cek sebentar, lalu klik Simpan Mata Pelajaran.`);
+        }
+
+        if (applyPdfPlanButton) {
+            applyPdfPlanButton.addEventListener('click', applyPdfChapterPlan);
         }
 
         if (pdfPageStartInput) {
@@ -1351,35 +1666,14 @@
             pdfPageEndInput.addEventListener('input', applyRangeSelection);
         }
 
-        if (pdfSelectAllButton) {
-            pdfSelectAllButton.addEventListener('click', () => {
-                selectedPdfPages = new Set(Array.from({ length: totalPdfPages }, (_, index) => index + 1));
-                pdfPagesGrid.querySelectorAll('.pdf-page-card').forEach((card) => {
-                    card.classList.add('selected');
-                    const checkbox = card.querySelector('.pdf-page-check');
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-                updatePdfSelectionSummary();
-                syncPageRangeInputsFromSelection();
+        pdfSaveModeInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+                if (input.value === 'range') {
+                    selectedPdfPages = new Set();
+                }
+                syncPdfModeUi();
             });
-        }
-
-        if (pdfClearAllButton) {
-            pdfClearAllButton.addEventListener('click', () => {
-                selectedPdfPages = new Set();
-                pdfPagesGrid.querySelectorAll('.pdf-page-card').forEach((card) => {
-                    card.classList.remove('selected');
-                    const checkbox = card.querySelector('.pdf-page-check');
-                    if (checkbox) {
-                        checkbox.checked = false;
-                    }
-                });
-                updatePdfSelectionSummary();
-                syncPageRangeInputsFromSelection();
-            });
-        }
+        });
 
         if (materiForm) {
             materiForm.addEventListener('submit', (event) => {
@@ -1387,11 +1681,18 @@
                 const isPdf = currentFile && (currentFile.type === 'application/pdf' || currentFile.name.toLowerCase().endsWith('.pdf'));
                 const selectedCoverMode = getSelectedCoverMode();
 
-                if (isPdf && totalPdfPages > 0 && selectedPdfPages.size === 0) {
+                if (currentFile && currentFile.size > serverUploadLimitBytes) {
                     event.preventDefault();
-                    alert('Pilih minimal satu halaman PDF yang ingin disimpan.');
+                    alert(`File ${(currentFile.size / 1024 / 1024).toFixed(1)} MB melebihi batas upload server ${(serverUploadLimitBytes / 1024 / 1024).toFixed(0)} MB. Kompres PDF dulu atau naikkan upload_max_filesize dan post_max_size di php.ini.`);
                     return;
                 }
+
+                if (isPdf && getPdfSaveMode() === 'range' && totalPdfPages > 0 && selectedPdfPages.size === 0) {
+                    event.preventDefault();
+                    alert('Isi Halaman Awal dan Halaman Akhir, atau pilih mode Simpan PDF utuh.');
+                    return;
+                }
+
                 renumberChapterItems();
 
                 if (
@@ -1404,6 +1705,233 @@
                 }
             });
         }
+
+        // ----- Auto-detect chapters from uploaded PDF (create page) -----
+        let createPdfDoc = null;
+
+        function resetCreateDetectPanel() {
+            const panel = document.getElementById('pdf_detect_panel');
+            const list  = document.getElementById('pdf_detect_chapters_list');
+            const extras = document.getElementById('pdf_detect_extras_section');
+            const extrasList = document.getElementById('pdf_detect_extras_list');
+            if (panel) panel.style.display = 'none';
+            if (list) list.innerHTML = '';
+            if (extras) extras.style.display = 'none';
+            if (extrasList) extrasList.innerHTML = '';
+            createPdfDoc = null;
+        }
+
+        async function renderCreateThumbnail(pageNumber, container) {
+            if (!createPdfDoc) return;
+            try {
+                if (pageNumber > createPdfDoc.numPages) return;
+                const page = await createPdfDoc.getPage(pageNumber);
+                const viewport = page.getViewport({ scale: 0.15 });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                container.innerHTML = '';
+                container.appendChild(canvas);
+            } catch (e) { /* silently fail */ }
+        }
+
+        function buildCreateDetectCard(judul, halamanAwal, halamanAkhir, isOptional, allChapters, sequenceIndex) {
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'chapter-detect-card' + (isOptional ? ' optional' : '');
+
+            const thumb = document.createElement('div');
+            thumb.className = 'chapter-detect-thumb';
+            thumb.innerHTML = `<i data-lucide="${isOptional ? 'book-marked' : 'file-text'}" style="width:20px;height:20px;color:${isOptional ? '#6366F1' : '#94a3b8'};"></i>`;
+
+            const info = document.createElement('div');
+            info.className = 'chapter-detect-info';
+
+            const badgeText = isOptional ? 'OPSIONAL' : `Materi ${sequenceIndex}`;
+            const badgeColor = isOptional ? '#6366F1' : '#B45309';
+            const badgeBg = isOptional ? '#E0E7FF' : '#FEF3C7';
+
+            const badgeEl = document.createElement('div');
+            badgeEl.style = `font-size: 0.65rem; font-weight: 800; color: ${badgeColor}; background: ${badgeBg}; padding: 0.15rem 0.4rem; border-radius: 4px; display: inline-block; width: max-content; margin-bottom: 0.25rem;`;
+            badgeEl.textContent = badgeText;
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'chapter-detect-title';
+            titleEl.textContent = judul;
+            titleEl.title = judul;
+
+            const rangeEl = document.createElement('div');
+            rangeEl.className = 'chapter-detect-range';
+            rangeEl.textContent = `Halaman ${halamanAwal} – ${halamanAkhir}`;
+
+            info.appendChild(badgeEl);
+            info.appendChild(titleEl);
+            info.appendChild(rangeEl);
+            card.appendChild(thumb);
+            card.appendChild(info);
+
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.chapter-detect-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+
+                // Fill "Judul Materi 1"
+                const judulPertama = document.querySelector('input[name="judul_bab_pertama"]');
+                if (judulPertama) judulPertama.value = judul;
+
+                // Set page range and apply selection
+                setPdfSaveMode('range');
+                if (pdfPageStartInput) pdfPageStartInput.value = halamanAwal;
+                if (pdfPageEndInput) pdfPageEndInput.value = halamanAkhir;
+                applyRangeSelection();
+
+                // For main chapters only: fill remaining babs into Chapter Builder
+                if (!isOptional && Array.isArray(allChapters) && allChapters.length > 0) {
+                    const otherChapters = allChapters.filter(c =>
+                        !(c.halaman_awal === halamanAwal && c.halaman_akhir === halamanAkhir)
+                    );
+                    const chapterListEl = document.getElementById('chapter_list');
+                    const chapterBuilderEl = document.getElementById('chapter_builder');
+                    const addBtn = document.getElementById('add_chapter_btn');
+                    
+                    if (chapterListEl) {
+                        chapterListEl.innerHTML = '';
+                        otherChapters.forEach((ch, offset) => {
+                            chapterListEl.appendChild(buildChapterItem(offset, {
+                                judul_bab: ch.judul_bab,
+                                urutan: offset + 2,
+                                tipe_konten: 'file',
+                                pdf_source_mode: 'first_bab',
+                                pdf_page_selection: pagesToSelection(ch.halaman_awal, ch.halaman_akhir),
+                                status_aktif: true,
+                            }));
+                        });
+                        renumberChapterItems();
+                    }
+                    if (chapterBuilderEl && otherChapters.length > 0) {
+                        chapterBuilderEl.style.display = 'block';
+                        // Hide manual add button when auto-populating to prevent confusion
+                        if (addBtn) addBtn.style.display = 'none';
+                    }
+                }
+            });
+
+            return { card, thumb };
+        }
+
+        async function detectChaptersForCreate(file) {
+            resetCreateDetectPanel();
+            const panel  = document.getElementById('pdf_detect_panel');
+            const list   = document.getElementById('pdf_detect_chapters_list');
+            const loading = document.getElementById('pdf_detect_loading');
+            const extrasSection = document.getElementById('pdf_detect_extras_section');
+            const extrasList    = document.getElementById('pdf_detect_extras_list');
+            const addBtn = document.getElementById('add_chapter_btn');
+            
+            if (addBtn) addBtn.style.display = 'inline-flex'; // Reset manual add btn
+            if (!panel || !list || !loading) return;
+
+            // Load PDF locally for thumbnail rendering
+            try {
+                const buf = await file.arrayBuffer();
+                createPdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+            } catch (e) { createPdfDoc = null; }
+
+            panel.style.display = 'block';
+            loading.style.display = 'block';
+
+            const formData = new FormData();
+            const csrfEl = document.querySelector('input[name="_token"]');
+            formData.append('_token', csrfEl ? csrfEl.value : '');
+            formData.append('pdf_file', file);
+
+            try {
+                const response = await fetch('{{ route("materi.bab.temp-detect") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await response.json();
+                loading.style.display = 'none';
+
+                if (data.success && Array.isArray(data.chapters) && data.chapters.length > 0) {
+                    const allChapters = data.chapters;
+                    const pageCount = (typeof data.page_count === 'number')
+                        ? data.page_count
+                        : (createPdfDoc ? createPdfDoc.numPages : null);
+
+                    let firstCard = null;
+
+                    // Render main chapter cards
+                    allChapters.forEach((ch, idx) => {
+                        const seqIndex = idx + 1; // 1-based index for badges
+                        const { card, thumb } = buildCreateDetectCard(
+                            ch.judul_bab, ch.halaman_awal, ch.halaman_akhir, false, allChapters, seqIndex
+                        );
+                        if (idx === 0) firstCard = card;
+                        list.appendChild(card);
+                        renderCreateThumbnail(ch.halaman_awal, thumb);
+                    });
+
+                    // Optional front matter
+                    let hasExtras = false;
+                    const first = allChapters[0];
+                    const last  = allChapters[allChapters.length - 1];
+
+                    if (first.halaman_awal > 1) {
+                        const { card, thumb } = buildCreateDetectCard(
+                            'Pendahuluan (Cover, Daftar Isi, dll.)', 1, first.halaman_awal - 1, true, [], 0
+                        );
+                        if (extrasList) { extrasList.appendChild(card); renderCreateThumbnail(1, thumb); }
+                        hasExtras = true;
+                    }
+
+                    // Optional back matter
+                    if (pageCount && last.halaman_akhir < pageCount) {
+                        const backStart = last.halaman_akhir + 1;
+                        const { card, thumb } = buildCreateDetectCard(
+                            'Penutup (Daftar Pustaka, Profil Penulis, dll.)', backStart, pageCount, true, [], 0
+                        );
+                        if (extrasList) { extrasList.appendChild(card); renderCreateThumbnail(backStart, thumb); }
+                        hasExtras = true;
+                    }
+
+                    if (hasExtras && extrasSection) extrasSection.style.display = 'block';
+                    lucide.createIcons();
+
+                    // AUTO APPLY THE FIRST CHAPTER SO THE USER DOESN'T HAVE TO
+                    if (firstCard) {
+                        firstCard.click();
+                    }
+
+                } else {
+                    // No chapters detected — hide panel silently
+                    panel.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Chapter detect failed:', err);
+                loading.style.display = 'none';
+                panel.style.display = 'none';
+            }
+        }
+        
+        // Scroll button listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const scrollBtn = document.getElementById('scroll_to_builder_btn');
+            if (scrollBtn) {
+                scrollBtn.addEventListener('click', () => {
+                    const builder = document.getElementById('chapter_builder');
+                    if (builder) {
+                        builder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        builder.style.transition = 'box-shadow 0.3s ease';
+                        builder.style.boxShadow = '0 0 0 4px rgba(248,184,3,0.3)';
+                        setTimeout(() => { builder.style.boxShadow = 'none'; }, 1500);
+                    }
+                });
+            }
+        });
+        // ----------------------------------------------------------------
 
         // Trigger on page load if value exists
         if (tipeKontenSelect.value) {
@@ -2051,5 +2579,3 @@
     </script>
 </body>
 </html>
-
-

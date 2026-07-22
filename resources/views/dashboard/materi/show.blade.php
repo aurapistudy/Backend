@@ -799,6 +799,10 @@
                                             <i data-lucide="plus-circle"></i>
                                             Tambah Materi
                                         </a>
+                                        <a href="{{ route('materi.bab.import', $materi->id) }}" class="btn btn-secondary">
+                                            <i data-lucide="file-down"></i>
+                                            Import dari PDF
+                                        </a>
                                         <a href="{{ route('materi.edit', $materi->id) }}" class="btn btn-secondary">
                                             <i data-lucide="edit-3"></i>
                                             Edit Mata Pelajaran
