@@ -1140,16 +1140,16 @@
                                 <label class="pdf-mode-card active" data-pdf-mode-card="all">
                                     <input type="radio" name="pdf_save_mode" value="all" checked>
                                     <span>
-                                        <span class="pdf-mode-title">Simpan PDF utuh</span>
-                                        <span class="pdf-mode-desc">Pakai semua halaman sebagai Materi 1. Ini pilihan paling sederhana.</span>
+                                        <span class="pdf-mode-title">Jadikan 1 Materi Utuh</span>
+                                        <span class="pdf-mode-desc">Seluruh halaman PDF ini akan disimpan ke dalam Materi 1.</span>
                                     </span>
                                 </label>
 
                                 <label class="pdf-mode-card" data-pdf-mode-card="range">
                                     <input type="radio" name="pdf_save_mode" value="range">
                                     <span>
-                                        <span class="pdf-mode-title">Ambil halaman tertentu</span>
-                                        <span class="pdf-mode-desc">Isi halaman awal dan akhir kalau Materi 1 cuma sebagian dari PDF.</span>
+                                        <span class="pdf-mode-title">Pecah PDF Jadi Beberapa Materi</span>
+                                        <span class="pdf-mode-desc">Materi 1 hanya akan berisi halaman yang ditentukan di bawah.</span>
                                     </span>
                                 </label>
                             </div>
@@ -1679,6 +1679,33 @@
             input.addEventListener('change', () => {
                 if (input.value === 'range') {
                     selectedPdfPages = new Set();
+                } else if (input.value === 'all') {
+                    const chapterListEl = document.getElementById('chapter_list');
+                    if (chapterListEl && chapterListEl.children.length > 0) {
+                        const hasAutoChapters = Array.from(chapterListEl.children).some(item => {
+                            const modeInput = item.querySelector('input[name^="chapters["][name$="[pdf_source_mode]"]');
+                            return modeInput && modeInput.value === 'first_bab';
+                        });
+
+                        if (hasAutoChapters) {
+                            const confirmClear = confirm("PERHATIAN:\n\nJika Anda memilih 'Jadikan 1 Materi Utuh', maka Materi 1 akan berisi SELURUH halaman buku dari awal sampai akhir.\n\nKarena Anda sebelumnya sudah memecah bab (lewat deteksi AI), apakah Anda ingin MENGHAPUS pecahan bab di daftar bawah agar isi materi tidak berulang (ganda)?");
+                            if (confirmClear) {
+                                Array.from(chapterListEl.children).forEach(item => {
+                                    const modeInput = item.querySelector('input[name^="chapters["][name$="[pdf_source_mode]"]');
+                                    if (modeInput && modeInput.value === 'first_bab') {
+                                        item.remove();
+                                    }
+                                });
+                                renumberChapterItems();
+                                const addBtn = document.getElementById('add_chapter_btn');
+                                if (addBtn) addBtn.style.display = 'inline-flex';
+                                document.querySelectorAll('.chapter-detect-card').forEach(c => c.classList.remove('active'));
+                            } else {
+                                setPdfSaveMode('range');
+                                return;
+                            }
+                        }
+                    }
                 }
                 syncPdfModeUi();
             });
