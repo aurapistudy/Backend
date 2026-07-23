@@ -11,17 +11,17 @@ class PdfChapterDetectionService
     /**
      * @return array<int, array{judul_bab: string, halaman_awal: int, halaman_akhir: int}>
      */
-    public function detectChapters(string $pdfPath): array
+    public function detectChapters(string $pdfPath, bool $includeOptional = false): array
     {
-        $chapters = $this->detectViaBookmarks($pdfPath);
+        $chapters = $this->detectViaBookmarks($pdfPath, $includeOptional);
         if (!empty($chapters)) {
             return $chapters;
         }
 
-        return $this->detectViaGemini($pdfPath);
+        return $this->detectViaGemini($pdfPath, $includeOptional);
     }
 
-    private function detectViaBookmarks(string $pdfPath): array
+    private function detectViaBookmarks(string $pdfPath, bool $includeOptional): array
     {
         $pdftk = $this->findBinary('pdftk');
         if (!$pdftk) return [];
@@ -42,8 +42,8 @@ class PdfChapterDetectionService
             } elseif (str_starts_with($line, 'BookmarkPageNumber: ')) {
                 $currentPage = (int) trim(substr($line, 20));
                 if ($currentTitle && $currentPage > 0) {
-                    // Skip obvious front/back matter bookmarks
-                    if (!$this->isFrontOrBackMatter($currentTitle)) {
+                    // Skip obvious front/back matter bookmarks if not including optional
+                    if ($includeOptional || !$this->isFrontOrBackMatter($currentTitle)) {
                         $chapters[] = [
                             'judul_bab'    => $currentTitle,
                             'halaman_awal' => $currentPage,
@@ -73,7 +73,7 @@ class PdfChapterDetectionService
         return $chapters;
     }
 
-    private function detectViaGemini(string $pdfPath): array
+    private function detectViaGemini(string $pdfPath, bool $includeOptional): array
     {
         $apiKey = config('services.gemini.api_key');
         if (empty($apiKey)) {
@@ -87,7 +87,38 @@ class PdfChapterDetectionService
         $model = config('services.gemini.text_model', 'gemini-2.5-flash-lite');
         $fileData = base64_encode(file_get_contents($pdfPath));
 
-        $prompt = <<<'PROMPT'
+        if ($includeOptional) {
+            $prompt = <<<'PROMPT'
+You are analyzing a PDF textbook or learning material. Your task is to detect ALL sections of this book, including Front Matter, Main Chapters, and Back Matter.
+
+STRICT RULES — READ CAREFULLY:
+
+1. PHYSICAL PAGE NUMBERS ONLY.
+   You MUST use the physical page index of the PDF file (1 = first page of the PDF file, 2 = second page, etc.).
+   DO NOT use printed page numbers written on the book pages. Count from the very first page of the PDF file.
+
+2. INCLUDE FRONT MATTER:
+   Identify sections like Cover/Sampul, Kata Pengantar, Daftar Isi.
+
+3. INCLUDE MAIN CHAPTERS:
+   Identify numbered chapters like "Bab 1 - ...", "Bab 2 - ...".
+
+4. INCLUDE BACK MATTER:
+   Identify sections like Daftar Pustaka, Glosarium, Indeks, Profil Penulis.
+
+5. Each section should have both halaman_awal and halaman_akhir using PHYSICAL PDF page numbers.
+   - halaman_akhir of section N = (halaman_awal of section N+1) - 1
+   - halaman_akhir of the LAST section = the final page of the book.
+
+Return ONLY a valid JSON array. No explanation, no markdown. Format:
+[
+  {"judul_bab": "Sampul", "halaman_awal": 1, "halaman_akhir": 2},
+  {"judul_bab": "Daftar Isi", "halaman_awal": 3, "halaman_akhir": 5},
+  {"judul_bab": "Bab 1 - Pendahuluan", "halaman_awal": 6, "halaman_akhir": 20}
+]
+PROMPT;
+        } else {
+            $prompt = <<<'PROMPT'
 You are analyzing a PDF textbook or learning material. Your task is to detect ONLY the main content chapters (Bab/Chapter) of this book.
 
 STRICT RULES — READ CAREFULLY:
@@ -141,6 +172,7 @@ Return ONLY a valid JSON array. No explanation, no markdown. Format:
   {"judul_bab": "Bab 2 - Judul Bab", "halaman_awal": 26, "halaman_akhir": 45}
 ]
 PROMPT;
+        }
 
         $response = Http::timeout(120)->withHeaders([
             'x-goog-api-key' => $apiKey,
@@ -182,8 +214,8 @@ PROMPT;
                 $halamanAwal = (int) $item['halaman_awal'];
                 $halamanAkhir = (int) $item['halaman_akhir'];
 
-                // Safety filter: skip obvious front matter / back matter based on title keywords
-                if ($this->isFrontOrBackMatter($judul)) {
+                // Safety filter: skip obvious front matter / back matter based on title keywords if not including optional
+                if (!$includeOptional && $this->isFrontOrBackMatter($judul)) {
                     Log::info("PdfChapterDetection: skipped front/back matter entry: \"{$judul}\"");
                     continue;
                 }

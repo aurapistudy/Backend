@@ -1166,6 +1166,7 @@
                             </div>
                             <div id="pdf_pages_grid" class="pdf-pages-grid"></div>
                             <div id="pdf_selection_empty" class="pdf-selection-empty">PDF akan disimpan utuh. Bagian Materi Tambahan di bawah boleh dilewati jika tidak ingin membuat materi lain.</div>
+                            
                             <!-- Auto-detect chapters panel -->
                             <div id="pdf_detect_panel" style="display:none; margin-top:1rem; padding:1rem; border:1px solid rgba(17,24,39,0.08); border-radius:14px; background:linear-gradient(180deg,#F8FAFC 0%,#FFFFFF 100%);">
                                 <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.25rem;">
@@ -1174,7 +1175,7 @@
                                         Bab Berhasil Terdeteksi
                                     </div>
                                 </div>
-                                <span class="hint" style="display:block; margin-bottom:0.85rem;">Bab pertama otomatis diisi sebagai Materi 1. Bab sisanya sudah disiapkan di bagian Materi Tambahan di bawah. Anda bisa klik card lain jika ingin menukar urutan Materi 1.</span>
+                                <span class="hint" style="display:block; margin-bottom:0.85rem;">Klik salah satu kartu bab di bawah untuk menyalin strukturnya ke form. Sistem akan otomatis mengurutkan semua materi secara kronologis dari halaman paling awal.</span>
 
                                 <div id="pdf_detect_loading" class="pdf-selection-loading" style="display:none;">
                                     Menganalisis bab dari PDF... <span style="font-weight:400;">(mungkin butuh beberapa detik)</span>
@@ -1185,11 +1186,19 @@
                                 </div>
 
                                 <div id="pdf_detect_extras_section" style="display:none;">
-                                    <div class="chapter-optional-label">
-                                        <i data-lucide="layers" style="width:14px;height:14px;"></i>
-                                        Bagian Tambahan (Opsional)
+                                    <div class="chapter-optional-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <i data-lucide="layers" style="width:14px;height:14px;"></i>
+                                            Bagian Tambahan (Opsional)
+                                        </div>
                                     </div>
                                     <span class="hint" style="display:block;margin-bottom:0.65rem;">Halaman di luar bab utama — cover, daftar isi, penutup, dll. Klik jika ingin ditambahkan sebagai Materi 1.</span>
+                                    
+                                    <label class="form-checkbox" style="margin-bottom: 1rem; background: #FFFBEB; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(248,184,3,0.3);">
+                                        <input type="checkbox" id="auto_include_extras" value="1" checked>
+                                        <span style="font-size: 0.85rem; font-weight: 600; color: #92400E;">Sertakan juga Pendahuluan & Penutup ke daftar materi tambahan saat menyimpan.</span>
+                                    </label>
+
                                     <div id="pdf_detect_extras_list" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0.65rem;">
                                     </div>
                                 </div>
@@ -1737,7 +1746,7 @@
             } catch (e) { /* silently fail */ }
         }
 
-        function buildCreateDetectCard(judul, halamanAwal, halamanAkhir, isOptional, allChapters, sequenceIndex) {
+        function buildCreateDetectCard(judul, halamanAwal, halamanAkhir, isOptional, allChapters, sequenceIndex, extraChapters = []) {
             const card = document.createElement('button');
             card.type = 'button';
             card.className = 'chapter-detect-card' + (isOptional ? ' optional' : '');
@@ -1776,28 +1785,44 @@
                 document.querySelectorAll('.chapter-detect-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
 
-                // Fill "Judul Materi 1"
-                const judulPertama = document.querySelector('input[name="judul_bab_pertama"]');
-                if (judulPertama) judulPertama.value = judul;
-
-                // Set page range and apply selection
-                setPdfSaveMode('range');
-                if (pdfPageStartInput) pdfPageStartInput.value = halamanAwal;
-                if (pdfPageEndInput) pdfPageEndInput.value = halamanAkhir;
-                applyRangeSelection();
-
-                // For main chapters only: fill remaining babs into Chapter Builder
+                let selectedChapters = [];
+                
                 if (!isOptional && Array.isArray(allChapters) && allChapters.length > 0) {
-                    const otherChapters = allChapters.filter(c =>
-                        !(c.halaman_awal === halamanAwal && c.halaman_akhir === halamanAkhir)
-                    );
+                    selectedChapters = [...allChapters];
+                } else if (isOptional) {
+                    selectedChapters = [{ judul_bab: judul, halaman_awal: halamanAwal, halaman_akhir: halamanAkhir }];
+                }
+
+                const includeExtrasCb = document.getElementById('auto_include_extras');
+                if (!isOptional && includeExtrasCb && includeExtrasCb.checked && Array.isArray(extraChapters)) {
+                    selectedChapters.push(...extraChapters);
+                }
+
+                // Sort chronologically by starting page
+                selectedChapters.sort((a, b) => a.halaman_awal - b.halaman_awal);
+
+                if (selectedChapters.length > 0) {
+                    const firstItem = selectedChapters[0];
+
+                    // Fill "Judul Materi 1"
+                    const judulPertama = document.querySelector('input[name="judul_bab_pertama"]');
+                    if (judulPertama) judulPertama.value = firstItem.judul_bab;
+
+                    // Set page range and apply selection
+                    setPdfSaveMode('range');
+                    if (pdfPageStartInput) pdfPageStartInput.value = firstItem.halaman_awal;
+                    if (pdfPageEndInput) pdfPageEndInput.value = firstItem.halaman_akhir;
+                    applyRangeSelection();
+
+                    // Fill Chapter Builder (Materi 2+)
                     const chapterListEl = document.getElementById('chapter_list');
                     const chapterBuilderEl = document.getElementById('chapter_builder');
                     const addBtn = document.getElementById('add_chapter_btn');
-                    
+
                     if (chapterListEl) {
                         chapterListEl.innerHTML = '';
-                        otherChapters.forEach((ch, offset) => {
+                        const restChapters = selectedChapters.slice(1);
+                        restChapters.forEach((ch, offset) => {
                             chapterListEl.appendChild(buildChapterItem(offset, {
                                 judul_bab: ch.judul_bab,
                                 urutan: offset + 2,
@@ -1809,9 +1834,9 @@
                         });
                         renumberChapterItems();
                     }
-                    if (chapterBuilderEl && otherChapters.length > 0) {
+                    
+                    if (chapterBuilderEl && selectedChapters.length > 1) {
                         chapterBuilderEl.style.display = 'block';
-                        // Hide manual add button when auto-populating to prevent confusion
                         if (addBtn) addBtn.style.display = 'none';
                     }
                 }
@@ -1863,38 +1888,47 @@
 
                     let firstCard = null;
 
+                    // Pre-calculate extras
+                    const extraChapters = [];
+                    const first = allChapters[0];
+                    const last  = allChapters[allChapters.length - 1];
+
+                    if (first.halaman_awal > 1) {
+                        extraChapters.push({
+                            judul_bab: 'Pendahuluan (Cover, Daftar Isi, dll.)',
+                            halaman_awal: 1,
+                            halaman_akhir: first.halaman_awal - 1
+                        });
+                    }
+
+                    if (pageCount && last.halaman_akhir < pageCount) {
+                        extraChapters.push({
+                            judul_bab: 'Penutup (Daftar Pustaka, Profil Penulis, dll.)',
+                            halaman_awal: last.halaman_akhir + 1,
+                            halaman_akhir: pageCount
+                        });
+                    }
+
                     // Render main chapter cards
                     allChapters.forEach((ch, idx) => {
                         const seqIndex = idx + 1; // 1-based index for badges
                         const { card, thumb } = buildCreateDetectCard(
-                            ch.judul_bab, ch.halaman_awal, ch.halaman_akhir, false, allChapters, seqIndex
+                            ch.judul_bab, ch.halaman_awal, ch.halaman_akhir, false, allChapters, seqIndex, extraChapters
                         );
                         if (idx === 0) firstCard = card;
                         list.appendChild(card);
                         renderCreateThumbnail(ch.halaman_awal, thumb);
                     });
 
-                    // Optional front matter
-                    let hasExtras = false;
-                    const first = allChapters[0];
-                    const last  = allChapters[allChapters.length - 1];
-
-                    if (first.halaman_awal > 1) {
-                        const { card, thumb } = buildCreateDetectCard(
-                            'Pendahuluan (Cover, Daftar Isi, dll.)', 1, first.halaman_awal - 1, true, [], 0
-                        );
-                        if (extrasList) { extrasList.appendChild(card); renderCreateThumbnail(1, thumb); }
-                        hasExtras = true;
-                    }
-
-                    // Optional back matter
-                    if (pageCount && last.halaman_akhir < pageCount) {
-                        const backStart = last.halaman_akhir + 1;
-                        const { card, thumb } = buildCreateDetectCard(
-                            'Penutup (Daftar Pustaka, Profil Penulis, dll.)', backStart, pageCount, true, [], 0
-                        );
-                        if (extrasList) { extrasList.appendChild(card); renderCreateThumbnail(backStart, thumb); }
-                        hasExtras = true;
+                    // Render optional front/back matter
+                    let hasExtras = extraChapters.length > 0;
+                    if (hasExtras) {
+                        extraChapters.forEach((extraCh) => {
+                            const { card, thumb } = buildCreateDetectCard(
+                                extraCh.judul_bab, extraCh.halaman_awal, extraCh.halaman_akhir, true, [], 0, []
+                            );
+                            if (extrasList) { extrasList.appendChild(card); renderCreateThumbnail(extraCh.halaman_awal, thumb); }
+                        });
                     }
 
                     if (hasExtras && extrasSection) extrasSection.style.display = 'block';

@@ -388,6 +388,18 @@
                                 <div class="dropzone-title">Klik atau seret file PDF ke sini</div>
                                 <div class="dropzone-desc" id="file_name_display">Maksimal 100 MB</div>
                             </div>
+
+                            <div style="margin-top: 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: #F8FAFC; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                                <input type="checkbox" id="include_optional" name="include_optional" value="1" style="width: 1.2rem; height: 1.2rem; margin-top: 0.1rem; accent-color: var(--color-accent); cursor: pointer;">
+                                <div>
+                                    <label for="include_optional" style="font-size: 0.95rem; font-weight: 600; color: var(--color-text); cursor: pointer; display: block; margin-bottom: 0.2rem;">
+                                        Sertakan Bagian Opsional (Daftar Isi, Sampul, dll)
+                                    </label>
+                                    <div style="font-size: 0.85rem; color: var(--color-text-light);">
+                                        Jika dicentang, sistem juga akan mendeteksi halaman di luar bab utama (seperti Cover, Kata Pengantar, Daftar Pustaka) sebagai bab tersendiri.
+                                    </div>
+                                </div>
+                            </div>
                             
                             <div class="loading-overlay" id="loadingOverlay">
                                 <div class="spinner"></div>
@@ -720,6 +732,7 @@
             
             const formData = new FormData();
             formData.append('pdf_file', file);
+            formData.append('include_optional', document.getElementById('include_optional').checked ? 1 : 0);
             formData.append('_token', '{{ csrf_token() }}');
             
             try {

@@ -36,7 +36,8 @@ class MateriBabImportController extends Controller
         $file->move($tempDirectory, basename($sourcePath));
         
         $pageCount = app(PdfCompressionService::class)->getPageCount($sourcePath);
-        $chapters = $detectionService->detectChapters($sourcePath);
+        $includeOptional = $request->boolean('include_optional');
+        $chapters = $detectionService->detectChapters($sourcePath, $includeOptional);
         
         @unlink($sourcePath);
 
@@ -63,7 +64,8 @@ class MateriBabImportController extends Controller
 
         $absolutePath = Storage::disk('public')->path($pdfSourcePath);
         $pageCount = app(PdfCompressionService::class)->getPageCount($absolutePath);
-        $chapters = $detectionService->detectChapters($absolutePath);
+        $includeOptional = $request->boolean('include_optional');
+        $chapters = $detectionService->detectChapters($absolutePath, $includeOptional);
 
         return response()->json([
             'success' => true,
@@ -96,7 +98,8 @@ class MateriBabImportController extends Controller
         Storage::disk('public')->put($sourceStoredPath, file_get_contents($sourcePath));
 
         $pageCount = app(PdfCompressionService::class)->getPageCount($sourcePath);
-        $chapters = $detectionService->detectChapters($sourcePath);
+        $includeOptional = $request->boolean('include_optional');
+        $chapters = $detectionService->detectChapters($sourcePath, $includeOptional);
 
         return response()->json([
             'success' => true,
